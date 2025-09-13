@@ -1,18 +1,16 @@
-# 🌍 Basic Internal HR System
+Basic Internal HR System
 
-A full-stack **HR management system** built with **Next.js, TypeScript, and Node.js API routes**.  
+A full-stack HR management system built with Next.js, TypeScript, and Node.js API routes.  
 This project demonstrates role-based authentication, employee management, HR request handling, and live deployment on **Vercel**.  
 
----
-
-## 🎯 Project Objective
+Project Objective
 
 The goal of this project is to build a **basic internal HR system** that enables a company to manage employees efficiently.  
 The system supports **Admin** and **Employee** roles, offering features for CRUD operations, dashboards, and HR requests.  
 
 ---
 
-## ✅ Requirements vs Implementation
+##Requirements vs Implementation
 
 ### 1. **User Authentication**
 - ✔️ Sign-in & Sign-out functionality
