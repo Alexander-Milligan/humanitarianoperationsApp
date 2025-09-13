@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Navbar from "../../components/Navbar";
 import styles from "../admin/admin.module.css";
 import {
@@ -11,9 +11,7 @@ import {
   Legend,
 } from "recharts";
 import { jwtDecode } from "jwt-decode";
-import Image from "next/image";
 
-/* ---------- Types ---------- */
 type Emp = {
   id: number;
   name: string;
@@ -21,7 +19,7 @@ type Emp = {
   department: string;
   position: string;
   salary: number;
-  avatar?: string;
+  avatar?: string; // optional preview / persisted if your API returns it
 };
 
 type TokenPayload = {
@@ -111,7 +109,7 @@ export default function Page() {
   }, []);
 
   // Load my leave requests once employee known, and whenever a leave is submitted.
-  const loadMyLeaves = useCallback(async () => {
+  async function loadMyLeaves() {
     if (!employee) return;
     setMyLeavesLoading(true);
     try {
@@ -126,11 +124,11 @@ export default function Page() {
     } finally {
       setMyLeavesLoading(false);
     }
-  }, [employee]);
+  }
 
   useEffect(() => {
     if (employee) loadMyLeaves();
-  }, [employee, loadMyLeaves]);
+  }, [employee]);
 
   const salaryProgress = useMemo(
     () =>
@@ -298,12 +296,10 @@ export default function Page() {
         ) : employee ? (
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
             {employee.avatar && (
-              <Image
+              <img
                 src={`/uploads/${employee.avatar}`}
                 alt="Profile"
-                width={60}
-                height={60}
-                style={{ borderRadius: "50%" }}
+                style={{ width: "60px", height: "60px", borderRadius: "50%" }}
               />
             )}
             <div>
@@ -330,7 +326,146 @@ export default function Page() {
         )}
       </header>
 
-      {/* … KEEPING ALL YOUR ORIGINAL PANELS, CARDS, MODALS, TABLES … */}
+      {employee && (
+        <>
+          {/* Info Cards */}
+          <section className={styles.cards}>
+            <div className={`${styles.card} ${styles.cardBlue}`}>
+              <div className={styles.cardLabel}>Email</div>
+              <div className={styles.cardValue}>{employee.email}</div>
+            </div>
+            <div className={`${styles.card} ${styles.cardGreen}`}>
+              <div className={styles.cardLabel}>Department</div>
+              <div className={styles.cardValue}>{employee.department}</div>
+            </div>
+            <div className={`${styles.card} ${styles.cardRed}`}>
+              <div className={styles.cardLabel}>Salary</div>
+              <div className={styles.cardValue}>
+                £{employee.salary.toLocaleString()}
+              </div>
+            </div>
+          </section>
+
+          {/* Salary + Actions */}
+          <section className={styles.grid}>
+            <div className={styles.panel}>
+              <h3 className={styles.panelTitle}>My Salary Progress</h3>
+              <div className={styles.chart}>
+                <ResponsiveContainer width="100%" height={260}>
+                  <RadialBarChart
+                    innerRadius="40%"
+                    outerRadius="100%"
+                    barSize={30}
+                    data={salaryProgress}
+                  >
+                    <RadialBar background dataKey="value" />
+                    <Legend />
+                    <Tooltip />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className={styles.panel}>
+              <h3 className={styles.panelTitle}>Quick Actions</h3>
+              <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+                <button
+                  className={styles.btnPrimary}
+                  onClick={() => setShowProfile(true)}
+                >
+                  View Profile
+                </button>
+                <button
+                  className={styles.btnLite}
+                  onClick={() => setShowUpdate(true)}
+                >
+                  Update My Details
+                </button>
+                <button
+                  className={styles.btnDanger}
+                  onClick={() => setShowLeave(true)}
+                >
+                  Request Leave
+                </button>
+                <button
+                  className={styles.btnPrimary}
+                  onClick={() => setShowReset(true)}
+                >
+                  Request Password Reset
+                </button>
+                {employee.department === "HR" ? (
+                  <button
+                    className={styles.btnLite}
+                    onClick={() => setShowHr(true)}
+                  >
+                    View HR Requests
+                  </button>
+                ) : (
+                  <button
+                    className={styles.btnLite}
+                    onClick={() => setShowContactHr(true)}
+                  >
+                    Contact HR
+                  </button>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* My Leave Requests */}
+          <section className={styles.panelWide}>
+            <div className={styles.toolbar}>
+              <h3 className={styles.panelTitle}>My Leave Requests</h3>
+              <button
+                className={styles.btnLite}
+                onClick={() => loadMyLeaves()}
+                title="Refresh"
+              >
+                Refresh
+              </button>
+            </div>
+
+            <div className={styles.tableWrap}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Dates</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Requested</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {myLeavesLoading ? (
+                    <tr>
+                      <td colSpan={5}>Loading…</td>
+                    </tr>
+                  ) : myLeaves.length ? (
+                    myLeaves.map((it) => (
+                      <tr key={it.id}>
+                        <td>{it.id}</td>
+                        <td>
+                          {it.start} → {it.end}
+                        </td>
+                        <td>{it.reason}</td>
+                        <td style={{ textTransform: "capitalize" }}>
+                          {it.status}
+                        </td>
+                        <td>{new Date(it.requestedAt).toLocaleString()}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5}>No leave requests yet.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      )}
 
       {/* Profile Modal */}
       {showProfile && employee && (
@@ -341,20 +476,245 @@ export default function Page() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h4 className={styles.modalTitle}>Profile</h4>
             {employee.avatar && (
-              <Image
+              <img
                 src={`/uploads/${employee.avatar}`}
                 alt="Profile"
-                width={100}
-                height={100}
-                style={{ borderRadius: "50%" }}
+                style={{ width: "100px", height: "100px", borderRadius: "50%" }}
               />
             )}
-            {/* …rest of your profile modal unchanged… */}
+            <ul>
+              <li>
+                <strong>Name:</strong> {employee.name}
+              </li>
+              <li>
+                <strong>Email:</strong> {employee.email}
+              </li>
+              <li>
+                <strong>Department:</strong> {employee.department}
+              </li>
+              <li>
+                <strong>Position:</strong> {employee.position}
+              </li>
+              <li>
+                <strong>Salary:</strong> £{employee.salary.toLocaleString()}
+              </li>
+            </ul>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.btnLite}
+                onClick={() => setShowProfile(false)}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* …rest of your modals unchanged… */}
+      {/* Update Modal */}
+      {showUpdate && employee && (
+        <div
+          className={styles.modalBackdrop}
+          onClick={() => setShowUpdate(false)}
+        >
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h4 className={styles.modalTitle}>Update My Details</h4>
+            {msg && <div className={styles.alert}>{msg}</div>}
+            <form onSubmit={saveUpdate} className={styles.formGrid}>
+              <label>
+                <span>Name</span>
+                <input
+                  className={styles.input}
+                  value={form.name || ""}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
+              </label>
+              <label>
+                <span>Email</span>
+                <input
+                  className={styles.input}
+                  value={form.email || ""}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
+              </label>
+              <label>
+                <span>Profile Picture</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className={styles.input}
+                  onChange={(e) =>
+                    e.target.files?.[0] && uploadAvatar(e.target.files[0])
+                  }
+                  disabled={uploading}
+                />
+              </label>
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.btnLite}
+                  onClick={() => setShowUpdate(false)}
+                >
+                  Cancel
+                </button>
+                <button className={styles.btnPrimary}>Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Modal */}
+      {showLeave && (
+        <div
+          className={styles.modalBackdrop}
+          onClick={() => setShowLeave(false)}
+        >
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h4 className={styles.modalTitle}>Request Leave</h4>
+            {msg && <div className={styles.alert}>{msg}</div>}
+            <form onSubmit={submitLeave} className={styles.formGrid}>
+              <label>
+                <span>Start Date</span>
+                <input
+                  type="date"
+                  className={styles.input}
+                  value={leaveForm.start}
+                  onChange={(e) =>
+                    setLeaveForm({ ...leaveForm, start: e.target.value })
+                  }
+                  required
+                />
+              </label>
+              <label>
+                <span>End Date</span>
+                <input
+                  type="date"
+                  className={styles.input}
+                  value={leaveForm.end}
+                  onChange={(e) =>
+                    setLeaveForm({ ...leaveForm, end: e.target.value })
+                  }
+                  required
+                />
+              </label>
+              <label>
+                <span>Reason</span>
+                <textarea
+                  className={styles.input}
+                  value={leaveForm.reason}
+                  onChange={(e) =>
+                    setLeaveForm({ ...leaveForm, reason: e.target.value })
+                  }
+                  required
+                />
+              </label>
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.btnLite}
+                  onClick={() => setShowLeave(false)}
+                >
+                  Cancel
+                </button>
+                <button className={styles.btnPrimary}>Submit</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Password Reset Modal */}
+      {showReset && (
+        <div
+          className={styles.modalBackdrop}
+          onClick={() => setShowReset(false)}
+        >
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h4 className={styles.modalTitle}>Request Password Reset</h4>
+            {resetMsg && <div className={styles.alert}>{resetMsg}</div>}
+            <p>
+              Are you sure you want to request a password reset for{" "}
+              <strong>{employee?.email}</strong>?
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.btnLite}
+                onClick={() => setShowReset(false)}
+              >
+                Cancel
+              </button>
+              <button className={styles.btnPrimary} onClick={submitReset}>
+                Send Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HR Requests Modal */}
+      {showHr && (
+        <div className={styles.modalBackdrop} onClick={() => setShowHr(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h4 className={styles.modalTitle}>HR Requests</h4>
+            {hrLoading ? (
+              <p>Loading…</p>
+            ) : hrItems.length ? (
+              <ul>
+                {hrItems.map((it) => (
+                  <li key={it.id}>
+                    <strong>#{it.id}</strong> – {it.message} (
+                    {new Date(it.requestedAt).toLocaleString()})
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No HR requests yet.</p>
+            )}
+            <div className={styles.modalActions}>
+              <button
+                className={styles.btnLite}
+                onClick={() => setShowHr(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contact HR Modal */}
+      {showContactHr && (
+        <div
+          className={styles.modalBackdrop}
+          onClick={() => setShowContactHr(false)}
+        >
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h4 className={styles.modalTitle}>Contact HR</h4>
+            {contactHrMsg && <div className={styles.alert}>{contactHrMsg}</div>}
+            <textarea
+              className={styles.input}
+              rows={4}
+              placeholder="Write your message..."
+              value={contactHrText}
+              onChange={(e) => setContactHrText(e.target.value)}
+            />
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.btnLite}
+                onClick={() => setShowContactHr(false)}
+              >
+                Cancel
+              </button>
+              <button className={styles.btnPrimary} onClick={submitContactHr}>
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
