@@ -19,7 +19,7 @@ type Emp = {
   department: string;
   position: string;
   salary: number;
-  avatar?: string; // optional preview / persisted if your API returns it
+  avatar?: string; 
 };
 
 type TokenPayload = {
@@ -211,7 +211,6 @@ export default function Page() {
       if (data.ok) {
         setMsg("✅ Leave request submitted.");
         setLeaveForm({ start: "", end: "", reason: "" });
-        // refresh my list so status appears immediately
         loadMyLeaves();
         setTimeout(() => setShowLeave(false), 1500);
       } else {
