@@ -63,4 +63,22 @@ The system supports **Admin** and **Employee** roles, offering features for CRUD
 ---
 
 ## 📂 Project Structure
+hr-system/
+│── app/ # Next.js App Router pages
+│ ├── api/ # API routes (employees, hr, stats, leave, etc.)
+│ └── dashboard/ # Admin & Employee dashboards
+│── lib/ # Shared in-memory store and type models
+│── public/ # Static assets (avatars, uploads)
+│── server.js # Local Express server (for cPanel Node hosting)
+│── package.json
+│── next.config.ts
+│── tsconfig.json
+│── .env.local # Environment variables (ignored in repo)
+
+## 👨‍💻 Author
+
+Built with ❤️ by **Alexander Milligan**  
+🌐 [saltirewebsites.com](https://saltirewebsites.com)  
+
+🚀 [Live Vercel Demo](https://humanitarianoperations-ba33bl8lj-alexander-milligans-projects.vercel.app/)
 
