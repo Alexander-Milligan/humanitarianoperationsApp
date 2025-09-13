@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Basic Internal HR System
 
-## Getting Started
+A full-stack HR management system built with Next.js, TypeScript, and Node.js API routes.  
+This project demonstrates role-based authentication, employee management, HR request handling, and live deployment on **Vercel**.  
 
-First, run the development server:
+Project Objective
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+The goal of this project is to build a **basic internal HR system** that enables a company to manage employees efficiently.  
+The system supports **Admin** and **Employee** roles, offering features for CRUD operations, dashboards, and HR requests.  
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+##Requirements vs Implementation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. **User Authentication**
+- ✔️ Sign-in & Sign-out functionality
+- ✔️ JWT-based sessions
+- ✔️ Role-based access control (**Admin** & **Employee**)
 
-## Learn More
+### 2. **Employee Management**
+- ✔️ Admin can:
+  - Add employees (Name, Email, Department, Position, Salary)
+  - Edit employee details
+  - Delete employees
+- ✔️ Linked login account created automatically for each employee
+- ✔️ Demo account: `admin / password123`
 
-To learn more about Next.js, take a look at the following resources:
+### 3. **Tech Stack**
+- **Frontend:** React, TypeScript, Next.js  
+- **Styling:** CSS Modules + Bootstrap 5  
+- **Backend:** Node.js via **Next.js API routes**  
+- **Database (Demo):** In-memory store (`/lib/store.ts`)  
+  - *(Production-ready to swap with PostgreSQL/MySQL/MongoDB)*  
+- **Cloud Hosting:** **Vercel**  
+  - CI/CD via GitHub → auto deploy to production  
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. **Bonus Features**
+- ✔️ Upload employee profile pictures (local storage in `/public/uploads`)  
+- ✔️ Dashboard with **employee statistics**  
+- ✔️ Deployment via **Vercel** (cloud demo live)  
+- ⚡ CI/CD (GitHub → Vercel integration)  
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 5. **Evaluation Criteria**
+- ✔️ Clean, modular code (React components, API routes, typed models)  
+- ✔️ Fully functional system with Admin & Employee flows  
+- ✔️ Demonstrated full-stack skills (frontend, backend, APIs, auth)  
+- ✔️ Live deployment (Vercel link below)  
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🛠️ Tech Stack
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Layer         | Technology Used |
+|---------------|-----------------|
+| **Frontend**  | React 18, Next.js 15, TypeScript |
+| **Backend**   | Next.js API Routes (Node.js) |
+| **Styling**   | Bootstrap 5 + CSS Modules |
+| **Charts**    | Recharts (Radial & Bar Charts) |
+| **Auth**      | JWT (`jwt-decode`) |
+| **Data Store**| In-memory demo store (`/lib/store.ts`) |
+| **Cloud**     | Vercel (serverless deployment) |
+
+---
+
+## 📂 Project Structure
+hr-system/
+│── app/ # Next.js App Router pages
+│ ├── api/ # API routes (employees, hr, stats, leave, etc.)
+│ └── dashboard/ # Admin & Employee dashboards
+│── lib/ # Shared in-memory store and type models
+│── public/ # Static assets (avatars, uploads)
+│── server.js # Local Express server (for cPanel Node hosting)
+│── package.json
+│── next.config.ts
+│── tsconfig.json
+│── .env.local # Environment variables (ignored in repo)
+
+## 👨‍💻 Author
+
+Built with ❤️ by **Alexander Milligan**  
+🌐 [saltirewebsites.com](https://saltirewebsites.com)  
+
+🚀 [Live Vercel Demo](https://humanitarianoperations-ba33bl8lj-alexander-milligans-projects.vercel.app/)
+
