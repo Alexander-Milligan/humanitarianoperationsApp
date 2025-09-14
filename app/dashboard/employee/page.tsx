@@ -19,7 +19,7 @@ type Emp = {
   department: string;
   position: string;
   salary: number;
-  avatar?: string; // optional preview / persisted if your API returns it
+  avatar?: string; 
 };
 
 type TokenPayload = {
