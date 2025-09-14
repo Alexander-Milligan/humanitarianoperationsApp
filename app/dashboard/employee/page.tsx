@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Navbar from "../../components/Navbar";
 import styles from "../admin/admin.module.css";
 import {
@@ -49,6 +49,7 @@ type LeaveReq = {
 
 export default function Page() {
   const [employee, setEmployee] = useState<Emp | null>(null);
+  const [allEmployees, setAllEmployees] = useState<Emp[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal states
@@ -82,6 +83,7 @@ export default function Page() {
   const [myLeaves, setMyLeaves] = useState<LeaveReq[]>([]);
   const [myLeavesLoading, setMyLeavesLoading] = useState(false);
 
+  /* ---------- Load employee + all employees ---------- */
   useEffect(() => {
     const load = async () => {
       try {
@@ -93,8 +95,10 @@ export default function Page() {
 
         const r = await fetch("/api/employees");
         const d = await r.json();
-        const emp = d.employees?.find((e: Emp) => e.id === decoded.employeeId);
+        const list: Emp[] = d.employees || [];
+        setAllEmployees(list);
 
+        const emp = list.find((e: Emp) => e.id === decoded.employeeId);
         setEmployee(emp || null);
         setForm(emp || {});
       } catch (e) {
@@ -108,7 +112,19 @@ export default function Page() {
     load();
   }, []);
 
-  // Load my leave requests once employee known, and whenever a leave is submitted.
+  /* ---------- Helpers ---------- */
+  const nameById = (id: number) =>
+    allEmployees.find((e) => e.id === id)?.name || `#${id}`;
+
+  const salaryProgress = useMemo(
+    () =>
+      employee
+        ? [{ name: "Salary", value: employee.salary, fill: "#0d6efd" }]
+        : [],
+    [employee]
+  );
+
+  /* ---------- My leave requests ---------- */
   async function loadMyLeaves() {
     if (!employee) return;
     setMyLeavesLoading(true);
@@ -130,13 +146,34 @@ export default function Page() {
     if (employee) loadMyLeaves();
   }, [employee]);
 
-  const salaryProgress = useMemo(
-    () =>
-      employee
-        ? [{ name: "Salary", value: employee.salary, fill: "#0d6efd" }]
-        : [],
-    [employee]
-  );
+  /* ---------- HR requests (panel + modal trigger) ---------- */
+  async function loadHrRequests() {
+    setHrLoading(true);
+    try {
+      const res = await fetch("/api/hr");
+      const data = await res.json();
+      if (data.ok) setHrItems(data.items);
+      else setHrItems([]);
+    } catch {
+      setHrItems([]);
+    } finally {
+      setHrLoading(false);
+    }
+  }
+
+  // Load when opening the modal
+  useEffect(() => {
+    if (showHr && employee?.department === "HR") {
+      loadHrRequests();
+    }
+  }, [showHr, employee]);
+
+  // Also load once automatically for HR users so the panel shows content
+  useEffect(() => {
+    if (employee?.department === "HR") {
+      loadHrRequests();
+    }
+  }, [employee]);
 
   /* ---------- Handlers ---------- */
   async function saveUpdate(e: React.FormEvent) {
@@ -172,7 +209,7 @@ export default function Page() {
     setUploading(true);
     const fd = new FormData();
     fd.append("file", file);
-    fd.append("userId", String(employee.id)); // userId==employee.id in this demo
+    fd.append("userId", String(employee.id)); // demo: userId mirrors employee.id
 
     try {
       const res = await fetch("/api/upload", { method: "POST", body: fd });
@@ -211,7 +248,6 @@ export default function Page() {
       if (data.ok) {
         setMsg("✅ Leave request submitted.");
         setLeaveForm({ start: "", end: "", reason: "" });
-        // refresh my list so status appears immediately
         loadMyLeaves();
         setTimeout(() => setShowLeave(false), 1500);
       } else {
@@ -242,23 +278,6 @@ export default function Page() {
       setResetMsg("❌ Error sending request.");
     }
   }
-
-  async function loadHrRequests() {
-    setHrLoading(true);
-    try {
-      const res = await fetch("/api/hr");
-      const data = await res.json();
-      if (data.ok) setHrItems(data.items);
-    } catch {
-      setHrItems([]);
-    } finally {
-      setHrLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    if (showHr) loadHrRequests();
-  }, [showHr]);
 
   async function submitContactHr() {
     if (!employee || !contactHrText.trim()) return;
@@ -464,6 +483,50 @@ export default function Page() {
               </table>
             </div>
           </section>
+
+          {/* HR Requests Panel (only for HR department) */}
+          {employee.department === "HR" && (
+            <section className={styles.panelWide}>
+              <div className={styles.toolbar}>
+                <h3 className={styles.panelTitle}>HR Requests</h3>
+                <button className={styles.btnLite} onClick={loadHrRequests}>
+                  Refresh
+                </button>
+              </div>
+              <div className={styles.tableWrap}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>From</th>
+                      <th>Message</th>
+                      <th>Requested At</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {hrLoading ? (
+                      <tr>
+                        <td colSpan={4}>Loading…</td>
+                      </tr>
+                    ) : hrItems.length ? (
+                      hrItems.map((it) => (
+                        <tr key={it.id}>
+                          <td>{it.id}</td>
+                          <td>{nameById(it.fromId)}</td>
+                          <td>{it.message}</td>
+                          <td>{new Date(it.requestedAt).toLocaleString()}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4}>No HR requests yet.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
         </>
       )}
 
@@ -653,7 +716,7 @@ export default function Page() {
         </div>
       )}
 
-      {/* HR Requests Modal */}
+      {/* HR Requests Modal (unchanged behavior, only opens if HR clicks the button) */}
       {showHr && (
         <div className={styles.modalBackdrop} onClick={() => setShowHr(false)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>

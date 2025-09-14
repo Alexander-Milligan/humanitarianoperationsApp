@@ -3,12 +3,14 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-import { findUser } from "@/lib/store";
+import bcrypt from "bcryptjs";
+import store, { findUser } from "@/lib/store";
 
 export async function GET() {
   return NextResponse.json({
     ok: true,
-    message: "Auth login endpoint (demo mode, no DB). Send a POST with username/password or email/password.",
+    message:
+      "Auth login endpoint (demo mode, no DB). Send a POST with username/password or email/password.",
   });
 }
 
@@ -27,8 +29,27 @@ export async function POST(req: Request) {
       );
     }
 
-    // ✅ Look up from lib/store.ts
-    const user = findUser(username, password);
+    // 1) Keep existing behavior first (plain-text compat via findUser)
+    let user = findUser(username, password);
+
+    // 2) Fallback: if not found, try bcrypt against any hashed password
+    if (!user) {
+      const candidate = store.users.find((u) => {
+        if (u.username === username) return true;
+        if ((u as any).email && (u as any).email === username) return true;
+        if (u.employeeId) {
+          const emp = store.employees.find((e) => e.id === u.employeeId);
+          return emp?.email === username;
+        }
+        return false;
+      });
+
+      if (candidate && typeof candidate.password === "string") {
+        // Only attempt compare if it looks like a bcrypt hash or is a string
+        const match = await bcrypt.compare(String(password), candidate.password);
+        if (match) user = candidate;
+      }
+    }
 
     if (!user) {
       return NextResponse.json(

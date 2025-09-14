@@ -74,11 +74,23 @@ export default function Page() {
   const [resetItems, setResetItems] = useState<PasswordReset[]>([]);
   const [resetLoading, setResetLoading] = useState(true);
 
-  // messages
-  const [msg, setMsg] = useState("");
+  // Messages (separate per section so errors show in the right place)
+  const [leaveMsg, setLeaveMsg] = useState("");
+  const [resetMsg, setResetMsg] = useState("");
+  const [hrMsg, setHrMsg] = useState("");
 
-  // ✅ New account modal
+  // New account modal
   const [newAccount, setNewAccount] = useState<NewAccount | null>(null);
+
+  // Reset Password modal
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetSaving, setResetSaving] = useState(false);
+  const [resetForm, setResetForm] = useState<{
+    id: number | null;
+    email: string;
+    newPassword: string;
+    confirm: string;
+  }>({ id: null, email: "", newPassword: "", confirm: "" });
 
   /* ---------- Load employees ---------- */
   useEffect(() => {
@@ -229,7 +241,7 @@ export default function Page() {
 
   /* ---------- Actions ---------- */
   async function updateLeave(id: number, status: "approved" | "rejected") {
-    setMsg("");
+    setLeaveMsg("");
     try {
       const r = await fetch("/api/leave", {
         method: "PATCH",
@@ -239,12 +251,63 @@ export default function Page() {
       const d = await r.json();
       if (d.ok) {
         setLeaveItems((prev) => prev.map((it) => (it.id === id ? d.item : it)));
-        setMsg(`✅ Request #${id} ${status}.`);
+        setLeaveMsg(`✅ Request #${id} ${status}.`);
       } else {
-        setMsg(`❌ ${d.error || "Update failed"}`);
+        setLeaveMsg(`❌ ${d.error || "Update failed"}`);
       }
     } catch {
-      setMsg("❌ Failed to update request.");
+      setLeaveMsg("❌ Failed to update request.");
+    }
+  }
+
+  function openResetModal(item: PasswordReset) {
+    setResetMsg("");
+    setResetForm({
+      id: item.id,
+      email: item.email,
+      newPassword: "",
+      confirm: "",
+    });
+    setResetOpen(true);
+  }
+
+  async function doPasswordReset(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resetForm.id || !resetForm.email) return;
+
+    if (!resetForm.newPassword || resetForm.newPassword.length < 6) {
+      setResetMsg("Password must be at least 6 characters.");
+      return;
+    }
+    if (resetForm.newPassword !== resetForm.confirm) {
+      setResetMsg("Passwords do not match.");
+      return;
+    }
+
+    setResetSaving(true);
+    setResetMsg("");
+    try {
+      const res = await fetch("/api/password-reset", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: resetForm.id,
+          email: resetForm.email,
+          newPassword: resetForm.newPassword,
+        }),
+      });
+      const d = await res.json();
+      if (d.ok) {
+        setResetItems((prev) => prev.filter((it) => it.id !== resetForm.id));
+        setResetOpen(false);
+        setResetForm({ id: null, email: "", newPassword: "", confirm: "" });
+      } else {
+        setResetMsg(d.error || "Failed to reset password.");
+      }
+    } catch {
+      setResetMsg("Failed to reset password.");
+    } finally {
+      setResetSaving(false);
     }
   }
 
@@ -360,7 +423,7 @@ export default function Page() {
       {/* Leave Requests Panel */}
       <section className={styles.panelWide}>
         <h3 className={styles.panelTitle}>Leave Requests</h3>
-        {msg && <div className={styles.alert}>{msg}</div>}
+        {leaveMsg && <div className={styles.alert}>{leaveMsg}</div>}
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
@@ -423,6 +486,7 @@ export default function Page() {
       <section className={styles.twoColGrid}>
         <div className={styles.panelHalf}>
           <h3 className={styles.panelTitle}>Password Reset Requests</h3>
+          {resetMsg && <div className={styles.alert}>{resetMsg}</div>}
           <div className={styles.tableWrap}>
             <table className={styles.table}>
               <thead>
@@ -430,12 +494,13 @@ export default function Page() {
                   <th>ID</th>
                   <th>Email</th>
                   <th>Requested At</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {resetLoading ? (
                   <tr>
-                    <td colSpan={3}>Loading…</td>
+                    <td colSpan={4}>Loading…</td>
                   </tr>
                 ) : resetItems.length ? (
                   resetItems.map((it) => (
@@ -443,11 +508,19 @@ export default function Page() {
                       <td>{it.id}</td>
                       <td>{it.email}</td>
                       <td>{new Date(it.requestedAt).toLocaleString()}</td>
+                      <td>
+                        <button
+                          className={styles.btnPrimary}
+                          onClick={() => openResetModal(it)}
+                        >
+                          Set Password
+                        </button>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={3}>No password reset requests.</td>
+                    <td colSpan={4}>No password reset requests.</td>
                   </tr>
                 )}
               </tbody>
@@ -457,6 +530,7 @@ export default function Page() {
 
         <div className={styles.panelHalf}>
           <h3 className={styles.panelTitle}>HR Requests</h3>
+          {hrMsg && <div className={styles.alert}>{hrMsg}</div>}
           <div className={styles.tableWrap}>
             <table className={styles.table}>
               <thead>
@@ -492,7 +566,7 @@ export default function Page() {
         </div>
       </section>
 
-      {/* ✅ New Account Modal */}
+      {/* New Account Modal */}
       {newAccount && (
         <div
           className={styles.modalBackdrop}
@@ -500,10 +574,7 @@ export default function Page() {
         >
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h4 className={styles.modalTitle}>New Account Created</h4>
-            <p>
-              An account has been created for the new employee. Share these
-              details with them:
-            </p>
+            <p>Share these details with the employee:</p>
             <ul>
               <li>
                 <strong>Username:</strong> {newAccount.username}
@@ -520,6 +591,66 @@ export default function Page() {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {resetOpen && (
+        <div
+          className={styles.modalBackdrop}
+          onClick={() => setResetOpen(false)}
+        >
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h4 className={styles.modalTitle}>Reset Password</h4>
+            {resetMsg && <div className={styles.alert}>{resetMsg}</div>}
+            <form onSubmit={doPasswordReset} className={styles.formGrid}>
+              <label>
+                <span>Email</span>
+                <input
+                  className={styles.input}
+                  readOnly
+                  value={resetForm.email}
+                />
+              </label>
+              <label>
+                <span>New Password</span>
+                <input
+                  className={styles.input}
+                  type="password"
+                  value={resetForm.newPassword}
+                  onChange={(e) =>
+                    setResetForm((f) => ({ ...f, newPassword: e.target.value }))
+                  }
+                  required
+                />
+              </label>
+              <label>
+                <span>Confirm Password</span>
+                <input
+                  className={styles.input}
+                  type="password"
+                  value={resetForm.confirm}
+                  onChange={(e) =>
+                    setResetForm((f) => ({ ...f, confirm: e.target.value }))
+                  }
+                  required
+                />
+              </label>
+              <div className={styles.modalActions}>
+                <button
+                  type="button"
+                  className={styles.btnLite}
+                  onClick={() => setResetOpen(false)}
+                  disabled={resetSaving}
+                >
+                  Cancel
+                </button>
+                <button className={styles.btnPrimary} disabled={resetSaving}>
+                  {resetSaving ? "Saving…" : "Reset Password"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
