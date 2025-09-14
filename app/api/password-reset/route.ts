@@ -4,6 +4,11 @@ import { NextResponse } from "next/server";
 import store, { addPasswordReset, listPasswordResets, User } from "@/lib/store";
 import bcrypt from "bcryptjs";
 
+/* ----------------- Type guard for email ----------------- */
+function hasEmail(u: User): u is User & { email: string } {
+  return typeof (u as any).email === "string";
+}
+
 /* ----------------- List all requests (for admin) ----------------- */
 export async function GET() {
   try {
@@ -62,7 +67,7 @@ export async function PATCH(req: Request) {
 
     // Find the user by email (via employee link in your store)
     const user: User | undefined = store.users.find((u) => {
-      if ((u as any).email) return (u as any).email === email;
+      if (hasEmail(u) && u.email === email) return true;
       if (u.employeeId) {
         const emp = store.employees.find((e) => e.id === u.employeeId);
         return emp?.email === email;

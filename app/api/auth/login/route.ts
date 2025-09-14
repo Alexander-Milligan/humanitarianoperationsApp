@@ -4,7 +4,12 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import store, { findUser } from "@/lib/store";
+import store, { findUser, User } from "@/lib/store";
+
+/* ----------------- Type guard for email ----------------- */
+function hasEmail(u: User): u is User & { email: string } {
+  return typeof (u as any).email === "string";
+}
 
 export async function GET() {
   return NextResponse.json({
@@ -29,14 +34,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1) Keep existing behavior first (plain-text compat via findUser)
+    // 1) Try plain-text (legacy) via findUser
     let user = findUser(username, password);
 
-    // 2) Fallback: if not found, try bcrypt against any hashed password
+    // 2) Fallback: bcrypt compare if no plain-text match
     if (!user) {
-      const candidate = store.users.find((u) => {
+      const candidate: User | undefined = store.users.find((u) => {
         if (u.username === username) return true;
-        if ((u as any).email && (u as any).email === username) return true;
+        if (hasEmail(u) && u.email === username) return true;
         if (u.employeeId) {
           const emp = store.employees.find((e) => e.id === u.employeeId);
           return emp?.email === username;
@@ -45,7 +50,6 @@ export async function POST(req: Request) {
       });
 
       if (candidate && typeof candidate.password === "string") {
-        // Only attempt compare if it looks like a bcrypt hash or is a string
         const match = await bcrypt.compare(String(password), candidate.password);
         if (match) user = candidate;
       }
