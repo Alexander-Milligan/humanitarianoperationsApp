@@ -25,7 +25,7 @@
 /* KPI Cards */
 .cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* Always 3 */
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
   margin-bottom: 2rem;
 }
@@ -70,7 +70,7 @@
   min-height: 320px;
 }
 .panelWide {
-  grid-column: 1 / -1; /* span full width */
+  grid-column: 1 / -1;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 1rem;
@@ -78,10 +78,9 @@
 }
 .twoColGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* two equal columns */
+  grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
 }
-
 .panelHalf {
   background: rgba(255, 255, 255, 0.08);
   border-radius: 12px;
@@ -121,12 +120,14 @@
   gap: 0.5rem;
 }
 
-/* Toolbar above EmployeeManager */
+/* Toolbar */
 .toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 .toolRight {
   display: flex;
@@ -177,7 +178,7 @@
   background: #bb2d3b;
 }
 
-/* Modal (Add/Edit/Delete) */
+/* Modal */
 .modalBackdrop {
   position: fixed;
   inset: 0;
@@ -216,4 +217,38 @@
   padding: 0.5rem;
   border-radius: 6px;
   margin-bottom: 1rem;
+}
+
+/* ===== Responsive adjustments ===== */
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .panelWide {
+    grid-column: span 1;
+  }
+  .twoColGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 500px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+  .title {
+    font-size: 1.6rem;
+  }
+  .cardValue {
+    font-size: 1.2rem;
+  }
+  .chart {
+    height: 220px;
+  }
 }
