@@ -5,8 +5,8 @@ import store, { addPasswordReset, listPasswordResets, User } from "@/lib/store";
 import bcrypt from "bcryptjs";
 
 /* ----------------- Type guard for email ----------------- */
-function hasEmail(u: User): u is User & { email: string } {
-  return typeof (u as any).email === "string";
+function hasEmail(u: unknown): u is User & { email: string } {
+  return typeof (u as { email?: unknown }).email === "string";
 }
 
 /* ----------------- List all requests (for admin) ----------------- */
@@ -68,8 +68,10 @@ export async function PATCH(req: Request) {
     // Find the user by email (via employee link in your store)
     const user: User | undefined = store.users.find((u) => {
       if (hasEmail(u) && u.email === email) return true;
-      if (u.employeeId) {
-        const emp = store.employees.find((e) => e.id === u.employeeId);
+      if ((u as User).employeeId) {
+        const emp = store.employees.find(
+          (e) => e.id === (u as User).employeeId
+        );
         return emp?.email === email;
       }
       return false;
@@ -84,13 +86,13 @@ export async function PATCH(req: Request) {
 
     // Hash the new password before storing
     const hashed = await bcrypt.hash(String(newPassword), 10);
-    user.password = hashed;
+    (user as User).password = hashed;
 
     // Remove reset request
     const idx = store.passwordResets.findIndex((r) => r.id === Number(id));
     if (idx !== -1) store.passwordResets.splice(idx, 1);
 
-    return NextResponse.json({ ok: true, userId: user.id });
+    return NextResponse.json({ ok: true, userId: (user as User).id });
   } catch (err: unknown) {
     const error = err as Error;
     return NextResponse.json(
