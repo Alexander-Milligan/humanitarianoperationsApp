@@ -25,9 +25,11 @@ export async function POST(req: Request) {
     }
 
     const identifier = username || email;
- // Debug logs
+
+    // Debug logs
     console.log("LOGIN INPUT:", identifier, password);
-    // ✅ Column names match your Neon DB
+
+    // ✅ Column names match Neon DB
     const { rows } = await pool.query(
       `
       SELECT id, email, username, password_hash, role, first_name, last_name
@@ -37,7 +39,9 @@ export async function POST(req: Request) {
       `,
       [identifier]
     );
- console.log("LOGIN ROWS:", rows);  // <--- see what DB returned
+
+    console.log("LOGIN ROWS:", rows);
+
     if (!rows.length) {
       return NextResponse.json(
         { ok: false, error: "Invalid credentials" },
@@ -47,7 +51,7 @@ export async function POST(req: Request) {
 
     const user = rows[0];
 
-    // ✅ Check bcrypt password
+    // ✅ Compare bcrypt password
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
       return NextResponse.json(
@@ -85,5 +89,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-  
 }
