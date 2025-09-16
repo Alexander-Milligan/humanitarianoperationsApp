@@ -37,7 +37,15 @@ export default function EmployeeManager() {
     try {
       const r = await fetch("/api/employees");
       const d = await r.json();
-      setRows(d.employees || []);
+      const employees: Emp[] = (d.employees || []).map((e: any) => ({
+        id: e.id ?? e.employee_id,
+        name: e.name,
+        email: e.email,
+        department: e.department,
+        position: e.position,
+        salary: Number(e.salary) || 0,
+      }));
+      setRows(employees);
     } catch (err) {
       console.error("Failed to load employees:", err);
       setRows([]);
@@ -110,9 +118,8 @@ export default function EmployeeManager() {
       if (d.ok) {
         setShowForm(false);
         await load();
-        window.dispatchEvent(new Event("employees:changed")); // notify dashboard
+        window.dispatchEvent(new Event("employees:changed"));
 
-        // ✅ Dispatch account:created event if new account was returned
         if (d.account) {
           window.dispatchEvent(
             new CustomEvent("account:created", { detail: d.account })

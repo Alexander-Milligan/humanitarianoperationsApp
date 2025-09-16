@@ -1,31 +1,16 @@
-// app/api/auth/login/route.ts
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
+import { pool } from "@/db/db";   // ✅ use pool, not getPool
 import bcrypt from "bcryptjs";
-import store, { findUser, User } from "@/lib/store";
+import jwt from "jsonwebtoken";
 
-/* ----------------- Type guard for email ----------------- */
-function hasEmail(u: unknown): u is User & { email: string } {
-  return typeof (u as { email?: unknown }).email === "string";
-}
-
-export async function GET() {
-  return NextResponse.json({
-    ok: true,
-    message:
-      "Auth login endpoint (demo mode, no DB). Send a POST with username/password or email/password.",
-  });
-}
+const JWT_SECRET = process.env.JWT_SECRET || "demo_secret";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { username, password } = body as {
-      username?: string; // can be username OR email
-      password?: string;
-    };
+    const { username, password } = body;
 
     if (!username || !password) {
       return NextResponse.json(
@@ -34,55 +19,57 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1) Try plain-text (legacy) via findUser
-    let user = findUser(username, password);
+    // 🔍 Look up by username OR email
+    const { rows } = await pool.query(
+      `
+      SELECT id, username, email, password_hash, role, first_name, last_name
+      FROM users
+      WHERE username = $1 OR email = $1
+      LIMIT 1
+      `,
+      [username]
+    );
 
-    // 2) Fallback: bcrypt compare if no plain-text match
-    if (!user) {
-      const candidate: User | undefined = store.users.find((u) => {
-        if ((u as User).username === username) return true;
-        if (hasEmail(u) && u.email === username) return true;
-        if ((u as User).employeeId) {
-          const emp = store.employees.find(
-            (e) => e.id === (u as User).employeeId
-          );
-          return emp?.email === username;
-        }
-        return false;
-      });
-
-      if (candidate && typeof candidate.password === "string") {
-        const match = await bcrypt.compare(String(password), candidate.password);
-        if (match) user = candidate;
-      }
-    }
-
-    if (!user) {
+    if (!rows.length) {
       return NextResponse.json(
         { ok: false, error: "Invalid credentials" },
         { status: 401 }
       );
     }
 
+    const user = rows[0];
+
+    // 🔑 Check bcrypt password
+    const match = await bcrypt.compare(password, user.password_hash);
+    if (!match) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid credentials" },
+        { status: 401 }
+      );
+    }
+
+    // 🎟️ Issue JWT
     const token = jwt.sign(
       {
-        id: (user as User).id,
-        role: (user as User).role,
-        username: (user as User).username,
-        employeeId: (user as User).employeeId,
+        id: user.id,
+        role: user.role,
+        username: user.username,
+        email: user.email,
+        name: `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim(),
       },
-      process.env.JWT_SECRET || "demo_secret",
+      JWT_SECRET,
       { expiresIn: "1h" }
     );
 
     return NextResponse.json({
       ok: true,
       token,
-      role: (user as User).role,
-      username: (user as User).username,
+      role: user.role,
+      username: user.username,
     });
   } catch (err: unknown) {
     const error = err as Error;
+    console.error("Login error:", error);
     return NextResponse.json(
       { ok: false, error: error.message || "Unknown error" },
       { status: 500 }

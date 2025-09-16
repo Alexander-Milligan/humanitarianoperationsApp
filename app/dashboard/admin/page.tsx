@@ -74,7 +74,7 @@ export default function Page() {
   const [resetItems, setResetItems] = useState<PasswordReset[]>([]);
   const [resetLoading, setResetLoading] = useState(true);
 
-  // Messages (separate per section so errors show in the right place)
+  // Messages
   const [leaveMsg, setLeaveMsg] = useState("");
   const [resetMsg, setResetMsg] = useState("");
   const [hrMsg, setHrMsg] = useState("");
@@ -99,22 +99,14 @@ export default function Page() {
         const r = await fetch("/api/employees");
         const d = await r.json();
 
-        const employees: Emp[] = (d.employees || []).map((e: unknown) => {
-          const emp = e as Emp & { salary?: number | string };
-          return {
-            id: emp.id,
-            name: emp.name,
-            email: emp.email,
-            department: emp.department,
-            position: emp.position,
-            salary:
-              emp?.salary !== undefined && emp?.salary !== null
-                ? typeof emp.salary === "number"
-                  ? emp.salary
-                  : Number(emp.salary) || 0
-                : 0,
-          };
-        });
+        const employees: Emp[] = (d.employees || []).map((e: any) => ({
+          id: e.id ?? e.employee_id,
+          name: e.name,
+          email: e.email,
+          department: e.department,
+          position: e.position,
+          salary: Number(e.salary) || 0,
+        }));
 
         setRows(employees);
       } catch (err) {
@@ -147,7 +139,16 @@ export default function Page() {
     try {
       const r = await fetch("/api/leave");
       const d = await r.json();
-      setLeaveItems(d.items || []);
+      const items: LeaveReq[] = (d.items || []).map((it: any) => ({
+        id: it.id,
+        employeeId: it.employee_id,
+        start: it.start ?? it.start_date,
+        end: it.end ?? it.end_date,
+        reason: it.reason,
+        status: it.status,
+        requestedAt: it.requestedAt ?? it.requested_at,
+      }));
+      setLeaveItems(items);
     } catch {
       setLeaveItems([]);
     } finally {
@@ -163,7 +164,13 @@ export default function Page() {
     try {
       const r = await fetch("/api/hr");
       const d = await r.json();
-      setHrItems(d.items || []);
+      const items: HrReq[] = (d.items || []).map((it: any) => ({
+        id: it.id,
+        fromId: it.fromId ?? it.from_id,
+        message: it.message,
+        requestedAt: it.requestedAt ?? it.requested_at,
+      }));
+      setHrItems(items);
     } catch {
       setHrItems([]);
     } finally {
@@ -179,7 +186,12 @@ export default function Page() {
     try {
       const r = await fetch("/api/password-reset");
       const d = await r.json();
-      setResetItems(d.items || []);
+      const items: PasswordReset[] = (d.items || []).map((it: any) => ({
+        id: it.id,
+        email: it.email,
+        requestedAt: it.requestedAt ?? it.requested_at,
+      }));
+      setResetItems(items);
     } catch {
       setResetItems([]);
     } finally {
@@ -482,7 +494,7 @@ export default function Page() {
       </section>
       <br />
 
-      {/* Password Reset + HR Requests side-by-side */}
+      {/* Password Reset + HR Requests */}
       <section className={styles.twoColGrid}>
         <div className={styles.panelHalf}>
           <h3 className={styles.panelTitle}>Password Reset Requests</h3>

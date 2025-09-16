@@ -1,8 +1,7 @@
-// app/api/upload/route.ts
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import store from "@/lib/store";
+import { query } from "../../../db/db";
 
 export async function POST(req: Request) {
   try {
@@ -19,16 +18,15 @@ export async function POST(req: Request) {
 
     const fakeFilename = `${Date.now()}-${file.name}`;
 
-    const user = store.users.find(
-      (u) => u.id === parseInt(userId as string, 10)
-    );
-    if (user) user.avatar = fakeFilename;
+    await query`
+      UPDATE employees
+      SET avatar = ${fakeFilename}
+      WHERE id = ${userId}
+    `;
 
     return NextResponse.json({ ok: true, filename: fakeFilename });
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Upload failed" },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error("Upload error:", err);
+    return NextResponse.json({ ok: false, error: "Upload failed" }, { status: 500 });
   }
 }

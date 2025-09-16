@@ -1,6 +1,6 @@
 export const runtime = "nodejs"; // run in Node.js runtime for MySQL
 import { NextResponse } from "next/server";
-import { getDB } from "@/lib/db";
+import { getDB } from "@/db/db";
 import type { RowDataPacket } from "mysql2";
 
 interface CountRow extends RowDataPacket {

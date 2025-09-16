@@ -1,6 +1,8 @@
 export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
-import store, { Emp, User } from "@/lib/store";
+import { query } from "../../../db/db";
+import bcrypt from "bcryptjs";
 
 /* Utility to generate random temp password */
 function randomPassword(length = 8) {
@@ -13,103 +15,76 @@ function randomPassword(length = 8) {
 
 /** GET: list all employees */
 export async function GET() {
-  // Return a shallow copy to avoid accidental external mutation
-  const employees = store.employees.map((e) => ({ ...e }));
-  return NextResponse.json({ ok: true, employees });
+  try {
+    const { rows } = await query`
+      SELECT id, name, email, department, position, salary, avatar
+      FROM employees
+      ORDER BY id ASC
+    `;
+    return NextResponse.json({ ok: true, employees: rows });
+  } catch (err) {
+    console.error("Employees GET error:", err);
+    return NextResponse.json({ ok: false, error: "Failed to fetch" }, { status: 500 });
+  }
 }
 
-/** POST: create employee + linked account */
+/** POST: create employee + linked user */
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const newEmp: Emp = {
-      id: Date.now(),
-      name: String(body.name ?? "").trim(),
-      email: String(body.email ?? "").trim(),
-      department: String(body.department ?? "").trim(),
-      position: String(body.position ?? "").trim(),
-      salary:
-        typeof body.salary === "number"
-          ? body.salary
-          : Number(body.salary ?? 0) || 0,
-    };
-
-    store.employees.push(newEmp);
-
-    // 🔑 Create linked user account
     const tempPassword = randomPassword();
-    const newUser: User = {
-      id: Date.now(),
-      username: newEmp.email, // login with email
-      password: tempPassword,
-      role: "employee",
-      name: newEmp.name,
-      employeeId: newEmp.id,
-    };
-    store.users.push(newUser);
+    const hashed = await bcrypt.hash(tempPassword, 10);
+
+    const { rows } = await query`
+      INSERT INTO employees (name, email, department, position, salary)
+      VALUES (${body.name}, ${body.email}, ${body.department}, ${body.position}, ${body.salary})
+      RETURNING id, name, email, department, position, salary, avatar
+    `;
+    const newEmp = rows[0];
+
+    await query`
+      INSERT INTO users (username, password, role, employee_id)
+      VALUES (${newEmp.email}, ${hashed}, 'employee', ${newEmp.id})
+    `;
 
     return NextResponse.json({
       ok: true,
       employee: newEmp,
-      account: { username: newUser.username, password: tempPassword },
+      account: { username: newEmp.email, password: tempPassword },
     });
   } catch (err: unknown) {
-    const e = err as Error;
-    return NextResponse.json(
-      { ok: false, error: e.message || "Bad request" },
-      { status: 400 }
-    );
+    console.error("Employees POST error:", err);
+    return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
   }
 }
 
-/**
- * PUT: update employee (partial)
- * IMPORTANT: Preserve existing salary unless a salary is explicitly provided.
- */
+/** PUT: update employee (partial) */
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
-    const id = Number(body.id);
 
-    const idx = store.employees.findIndex((e) => e.id === id);
-    if (idx === -1) {
-      return NextResponse.json(
-        { ok: false, error: "Employee not found" },
-        { status: 404 }
-      );
+    const { rows } = await query`
+      UPDATE employees
+      SET
+        name = COALESCE(${body.name}, name),
+        email = COALESCE(${body.email}, email),
+        department = COALESCE(${body.department}, department),
+        position = COALESCE(${body.position}, position),
+        salary = COALESCE(${body.salary}, salary),
+        avatar = COALESCE(${body.avatar}, avatar)
+      WHERE id = ${body.id}
+      RETURNING id, name, email, department, position, salary, avatar
+    `;
+
+    if (!rows.length) {
+      return NextResponse.json({ ok: false, error: "Employee not found" }, { status: 404 });
     }
 
-    const current = store.employees[idx];
-
-    // Start with the current record, then overlay incoming fields
-    const updated: Emp = {
-      ...current,
-      name: body.name !== undefined ? String(body.name) : current.name,
-      email: body.email !== undefined ? String(body.email) : current.email,
-      department:
-        body.department !== undefined
-          ? String(body.department)
-          : current.department,
-      position:
-        body.position !== undefined ? String(body.position) : current.position,
-      // Only overwrite salary if provided; otherwise keep current
-      salary:
-        body.salary !== undefined
-          ? typeof body.salary === "number"
-            ? body.salary
-            : Number(body.salary) || 0
-          : current.salary,
-    };
-
-    store.employees[idx] = updated;
-    return NextResponse.json({ ok: true, employee: updated });
+    return NextResponse.json({ ok: true, employee: rows[0] });
   } catch (err: unknown) {
-    const e = err as Error;
-    return NextResponse.json(
-      { ok: false, error: e.message || "Bad request" },
-      { status: 400 }
-    );
+    console.error("Employees PUT error:", err);
+    return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
   }
 }
 
@@ -117,21 +92,13 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const { id } = await req.json();
-    const empId = Number(id);
 
-    const before = store.employees.length;
-    store.employees = store.employees.filter((e) => e.id !== empId);
-    const removed = store.employees.length !== before;
+    await query`DELETE FROM users WHERE employee_id = ${id}`;
+    const result = await query`DELETE FROM employees WHERE id = ${id}`;
 
-    // also remove linked user
-    store.users = store.users.filter((u) => u.employeeId !== empId);
-
-    return NextResponse.json({ ok: true, removed });
+    return NextResponse.json({ ok: true, removed: (result.rowCount ?? 0) > 0 });
   } catch (err: unknown) {
-    const e = err as Error;
-    return NextResponse.json(
-      { ok: false, error: e.message || "Bad request" },
-      { status: 400 }
-    );
+    console.error("Employees DELETE error:", err);
+    return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
   }
 }

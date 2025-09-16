@@ -19,7 +19,7 @@ type Emp = {
   department: string;
   position: string;
   salary: number;
-  avatar?: string; 
+  avatar?: string;
 };
 
 type TokenPayload = {
@@ -32,9 +32,10 @@ type TokenPayload = {
 
 type HrReq = {
   id: number;
-  fromId: number;
+  user_id: number;
   message: string;
-  requestedAt: string;
+  status: string;
+  requested_at: string;
 };
 
 type LeaveReq = {
@@ -512,9 +513,9 @@ export default function Page() {
                       hrItems.map((it) => (
                         <tr key={it.id}>
                           <td>{it.id}</td>
-                          <td>{nameById(it.fromId)}</td>
+                          <td>{nameById(it.user_id)}</td>
                           <td>{it.message}</td>
-                          <td>{new Date(it.requestedAt).toLocaleString()}</td>
+                          <td>{new Date(it.requested_at).toLocaleString()}</td>
                         </tr>
                       ))
                     ) : (
@@ -728,7 +729,7 @@ export default function Page() {
                 {hrItems.map((it) => (
                   <li key={it.id}>
                     <strong>#{it.id}</strong> – {it.message} (
-                    {new Date(it.requestedAt).toLocaleString()})
+                    {new Date(it.requested_at).toLocaleString()})
                   </li>
                 ))}
               </ul>

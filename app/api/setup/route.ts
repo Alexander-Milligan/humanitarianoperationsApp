@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { getDB } from "@/lib/db";
+import { getDB } from "@/db/db";
 
 export async function GET() {
   try {
