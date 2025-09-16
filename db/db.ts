@@ -1,18 +1,15 @@
 // db/db.ts
-import { sql, createPool } from "@vercel/postgres";
-import type { QueryResultRow } from "@vercel/postgres";
+import { Pool } from "pg";
 
-const connectionString = process.env.POSTGRES_URL || process.env.STORAGE_URL_POSTGRES_URL;
+const connectionString = process.env.POSTGRES_URL;
 
 if (!connectionString) {
-  throw new Error("No database connection string found");
+  throw new Error("No database connection string found (POSTGRES_URL is missing)");
 }
 
-export const pool = createPool({ connectionString });
-
-export async function query<T extends QueryResultRow = QueryResultRow>(
-  strings: TemplateStringsArray,
-  ...values: any[]
-) {
-  return sql<T>(strings, ...values);
-}
+export const pool = new Pool({
+  connectionString,
+  ssl: {
+    rejectUnauthorized: false, // Neon requires SSL
+  },
+});
