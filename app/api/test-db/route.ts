@@ -1,31 +1,25 @@
-export const runtime = "nodejs"; // run in Node.js runtime for MySQL
-import { NextResponse } from "next/server";
-import { getDB } from "@/db/db";
-import type { RowDataPacket } from "mysql2";
+// app/api/test-db/route.ts
+export const runtime = "nodejs";
 
-interface CountRow extends RowDataPacket {
-  count: number;
-}
+import { NextResponse } from "next/server";
+import { query } from "@/db/db";
 
 export async function GET() {
   try {
-    const db = await getDB();
-
     // Quick health check
-    await db.query("SELECT 1");
+    await query`SELECT 1`;
 
     // Query counts
-    const [users] = await db.query<CountRow[]>(
-      "SELECT COUNT(*) AS count FROM users"
-    );
-    const [employees] = await db.query<CountRow[]>(
-      "SELECT COUNT(*) AS count FROM employees"
-    );
+    const { rows: users } = await query`
+      SELECT COUNT(*)::int AS count FROM users
+    `;
+    const { rows: employees } = await query`
+      SELECT COUNT(*)::int AS count FROM employees
+    `;
 
     const usersCount = users[0]?.count ?? 0;
     const employeesCount = employees[0]?.count ?? 0;
 
-    await db.end();
     return NextResponse.json({
       ok: true,
       users: usersCount,
@@ -33,7 +27,7 @@ export async function GET() {
     });
   } catch (err: unknown) {
     const error = err as Error;
-    console.error("DB ERROR:", error);
+    console.error("DB ERROR (test-db):", error);
     return NextResponse.json(
       { ok: false, error: error.message || "Unknown error" },
       { status: 500 }
