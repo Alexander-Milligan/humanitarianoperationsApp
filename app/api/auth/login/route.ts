@@ -1,58 +1,91 @@
+// app/api/auth/login/route.ts
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { pool } from "@/db/db";
+import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import store, { findUser, User } from "@/lib/store";
 
-/* Utility: random password */
-function randomPassword(length = 8) {
-  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  return Array.from({ length })
-    .map(() => chars[Math.floor(Math.random() * chars.length)])
-    .join("");
+/* ----------------- Type guard for email ----------------- */
+function hasEmail(u: unknown): u is User & { email: string } {
+  return typeof (u as { email?: unknown }).email === "string";
 }
 
-/** ---------- GET: list all employees ---------- */
 export async function GET() {
-  try {
-    const result = await pool.query(
-      "SELECT id, first_name, last_name, email, department, position, salary, avatar FROM employees ORDER BY id ASC"
-    );
-    return NextResponse.json({ ok: true, employees: result.rows });
-  } catch (err) {
-    console.error("Employees GET error:", err);
-    return NextResponse.json({ ok: false, error: "Failed to fetch" }, { status: 500 });
-  }
+  return NextResponse.json({
+    ok: true,
+    message:
+      "Auth login endpoint (demo mode, no DB). Send a POST with username/password or email/password.",
+  });
 }
 
-/** ---------- POST: create employee + linked user ---------- */
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const { username, password } = body as {
+      username?: string; // can be username OR email
+      password?: string;
+    };
 
-    const tempPassword = randomPassword();
-    const hashed = await bcrypt.hash(tempPassword, 10);
+    if (!username || !password) {
+      return NextResponse.json(
+        { ok: false, error: "Username/email and password required" },
+        { status: 400 }
+      );
+    }
 
-    const empInsert = await pool.query(
-      `INSERT INTO employees (first_name, last_name, email, department, position, salary)
-       VALUES ($1,$2,$3,$4,$5,$6)
-       RETURNING id, first_name, last_name, email, department, position, salary, avatar`,
-      [body.first_name, body.last_name, body.email, body.department, body.position, body.salary]
-    );
-    const newEmp = empInsert.rows[0];
+    // 1) Try plain-text (legacy) via findUser
+    let user = findUser(username, password);
 
-    await pool.query(
-      "INSERT INTO users (username, password_hash, role, email) VALUES ($1,$2,$3,$4)",
-      [body.email.split("@")[0], hashed, "employee", body.email]
+    // 2) Fallback: bcrypt compare if no plain-text match
+    if (!user) {
+      const candidate: User | undefined = store.users.find((u) => {
+        if ((u as User).username === username) return true;
+        if (hasEmail(u) && u.email === username) return true;
+        if ((u as User).employeeId) {
+          const emp = store.employees.find(
+            (e) => e.id === (u as User).employeeId
+          );
+          return emp?.email === username;
+        }
+        return false;
+      });
+
+      if (candidate && typeof candidate.password === "string") {
+        const match = await bcrypt.compare(String(password), candidate.password);
+        if (match) user = candidate;
+      }
+    }
+
+    if (!user) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid credentials" },
+        { status: 401 }
+      );
+    }
+
+    const token = jwt.sign(
+      {
+        id: (user as User).id,
+        role: (user as User).role,
+        username: (user as User).username,
+        employeeId: (user as User).employeeId,
+      },
+      process.env.JWT_SECRET || "demo_secret",
+      { expiresIn: "1h" }
     );
 
     return NextResponse.json({
       ok: true,
-      employee: newEmp,
-      account: { username: body.email.split("@")[0], password: tempPassword },
+      token,
+      role: (user as User).role,
+      username: (user as User).username,
     });
-  } catch (err) {
-    console.error("Employees POST error:", err);
-    return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
+  } catch (err: unknown) {
+    const error = err as Error;
+    return NextResponse.json(
+      { ok: false, error: error.message || "Unknown error" },
+      { status: 500 }
+    );
   }
 }
