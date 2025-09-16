@@ -1,8 +1,9 @@
-// db/db.ts
 import { sql } from "@vercel/postgres";
 
-// ✅ generic query helper
-export async function query<T = any>(
+
+import type { QueryResultRow } from "@vercel/postgres";
+
+export async function query<T extends QueryResultRow = any>(
   strings: TemplateStringsArray,
   ...values: any[]
 ): Promise<{ rows: T[] }> {
@@ -10,4 +11,4 @@ export async function query<T = any>(
   return { rows: result.rows };
 }
 
-export { sql }; // in case you want direct access
+export { sql }; 
