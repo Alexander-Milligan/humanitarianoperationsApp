@@ -2,7 +2,7 @@
 import { sql, createPool } from "@vercel/postgres";
 import type { QueryResultRow } from "@vercel/postgres";
 
-const connectionString = process.env.POSTGRES_URL || process.env.STORAGE_URL;
+const connectionString = process.env.POSTGRES_URL || process.env.STORAGE_URL_POSTGRES_URL;
 
 if (!connectionString) {
   throw new Error("No database connection string found");
