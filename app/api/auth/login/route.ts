@@ -2,7 +2,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { pool } from "@/db/db";
+import { sql } from "@vercel/postgres";
 import bcrypt from "bcryptjs";
 
 /* Utility: random password */
@@ -16,10 +16,12 @@ function randomPassword(length = 8) {
 /** ---------- GET: list all employees ---------- */
 export async function GET() {
   try {
-    const result = await pool.query(
-      "SELECT id, first_name, last_name, email, department, position, salary, avatar FROM employees ORDER BY id ASC"
-    );
-    return NextResponse.json({ ok: true, employees: result.rows });
+    const { rows } = await sql`
+      SELECT id, first_name, last_name, email, department, position, salary, avatar
+      FROM employees
+      ORDER BY id ASC
+    `;
+    return NextResponse.json({ ok: true, employees: rows });
   } catch (err) {
     console.error("Employees GET error:", err);
     return NextResponse.json({ ok: false, error: "Failed to fetch employees" }, { status: 500 });
@@ -34,18 +36,17 @@ export async function POST(req: Request) {
     const tempPassword = randomPassword();
     const hashed = await bcrypt.hash(tempPassword, 10);
 
-    const empInsert = await pool.query(
-      `INSERT INTO employees (first_name, last_name, email, department, position, salary)
-       VALUES ($1,$2,$3,$4,$5,$6)
-       RETURNING id, first_name, last_name, email, department, position, salary, avatar`,
-      [body.first_name, body.last_name, body.email, body.department, body.position, body.salary]
-    );
-    const newEmp = empInsert.rows[0];
+    const { rows } = await sql`
+      INSERT INTO employees (first_name, last_name, email, department, position, salary)
+      VALUES (${body.first_name}, ${body.last_name}, ${body.email}, ${body.department}, ${body.position}, ${body.salary})
+      RETURNING id, first_name, last_name, email, department, position, salary, avatar
+    `;
+    const newEmp = rows[0];
 
-    await pool.query(
-      "INSERT INTO users (username, password_hash, role, email) VALUES ($1,$2,$3,$4)",
-      [body.email.split("@")[0], hashed, "employee", body.email]
-    );
+    await sql`
+      INSERT INTO users (username, password_hash, role, email)
+      VALUES (${body.email.split("@")[0]}, ${hashed}, 'employee', ${body.email})
+    `;
 
     return NextResponse.json({
       ok: true,
