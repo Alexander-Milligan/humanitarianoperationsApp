@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "demo_secret";
 
+/* Health check */
 export async function GET() {
   return NextResponse.json({ ok: true, message: "Auth login endpoint is ready" });
 }
@@ -24,24 +25,22 @@ export async function POST(req: Request) {
     }
 
     const identifier = username || email;
-
-    // 🔍 Case-insensitive lookup
+ // Debug logs
+    console.log("LOGIN INPUT:", identifier, password);
+    // ✅ Column names match your Neon DB
     const { rows } = await pool.query(
       `
       SELECT id, email, username, password_hash, role, first_name, last_name
       FROM users
-      WHERE LOWER(username) = LOWER($1) OR LOWER(email) = LOWER($1)
+      WHERE username = $1 OR email = $1
       LIMIT 1
       `,
       [identifier]
     );
-
-    console.log("LOGIN INPUT:", identifier, password);
-    console.log("LOGIN ROWS:", rows);
-
+ console.log("LOGIN ROWS:", rows);  // <--- see what DB returned
     if (!rows.length) {
       return NextResponse.json(
-        { ok: false, error: "Invalid credentials (no user)" },
+        { ok: false, error: "Invalid credentials" },
         { status: 401 }
       );
     }
@@ -50,11 +49,9 @@ export async function POST(req: Request) {
 
     // ✅ Check bcrypt password
     const match = await bcrypt.compare(password, user.password_hash);
-    console.log("BCRYPT MATCH:", match);
-
     if (!match) {
       return NextResponse.json(
-        { ok: false, error: "Invalid credentials (wrong password)" },
+        { ok: false, error: "Invalid credentials" },
         { status: 401 }
       );
     }
@@ -88,4 +85,5 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+  
 }
