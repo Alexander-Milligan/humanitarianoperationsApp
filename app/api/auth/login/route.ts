@@ -25,7 +25,8 @@ export async function POST(req: Request) {
     }
 
     const identifier = username || email;
-
+ // Debug logs
+    console.log("LOGIN INPUT:", identifier, password);
     // ✅ Column names match your Neon DB
     const { rows } = await pool.query(
       `
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
       `,
       [identifier]
     );
-
+ console.log("LOGIN ROWS:", rows);  // <--- see what DB returned
     if (!rows.length) {
       return NextResponse.json(
         { ok: false, error: "Invalid credentials" },
@@ -84,4 +85,5 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+  
 }
