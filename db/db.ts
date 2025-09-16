@@ -13,3 +13,9 @@ export const pool = new Pool({
     rejectUnauthorized: false, // Neon requires SSL
   },
 });
+
+// ✅ add query helper for convenience
+export async function query<T = any>(text: string, params?: any[]): Promise<{ rows: T[] }> {
+  const result = await pool.query(text, params);
+  return { rows: result.rows as T[] };
+}
