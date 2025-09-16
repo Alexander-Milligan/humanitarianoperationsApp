@@ -1,41 +1,40 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { pool } from "@/db/db";   // ✅ use pool, not getPool
+import { pool } from "@/db/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "demo_secret";
 
-/* Optional GET for health check */
+/* Health check */
 export async function GET() {
-  return NextResponse.json({
-    ok: true,
-    message: "Auth login endpoint (DB mode) is ready",
-  });
+  return NextResponse.json({ ok: true, message: "Auth login endpoint is ready" });
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { username, password } = body;
+    const { username, email, password } = body;
 
-    if (!username || !password) {
+    if (!(username || email) || !password) {
       return NextResponse.json(
         { ok: false, error: "Username/email and password required" },
         { status: 400 }
       );
     }
 
-    // 🔍 Look up by username OR email
+    const identifier = username || email;
+
+    // ✅ Column names match your Neon DB
     const { rows } = await pool.query(
       `
-      SELECT id, username, email, password_hash, role, first_name, last_name
+      SELECT id, email, username, password_hash, role, first_name, last_name
       FROM users
       WHERE username = $1 OR email = $1
       LIMIT 1
       `,
-      [username]
+      [identifier]
     );
 
     if (!rows.length) {
@@ -47,7 +46,7 @@ export async function POST(req: Request) {
 
     const user = rows[0];
 
-    // 🔑 Check bcrypt password
+    // ✅ Check bcrypt password
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
       return NextResponse.json(
@@ -56,7 +55,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🎟️ Issue JWT
+    // ✅ Issue JWT
     const token = jwt.sign(
       {
         id: user.id,
