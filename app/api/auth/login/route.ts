@@ -7,6 +7,14 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "demo_secret";
 
+/* Optional GET for health check */
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    message: "Auth login endpoint (DB mode) is ready",
+  });
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -66,6 +74,8 @@ export async function POST(req: Request) {
       token,
       role: user.role,
       username: user.username,
+      email: user.email,
+      name: `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim(),
     });
   } catch (err: unknown) {
     const error = err as Error;

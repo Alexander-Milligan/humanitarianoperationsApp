@@ -24,7 +24,10 @@ export async function GET() {
     return NextResponse.json({ ok: true, employees: rows });
   } catch (err) {
     console.error("Employees GET error:", err);
-    return NextResponse.json({ ok: false, error: "Failed to fetch" }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "Failed to fetch" },
+      { status: 500 }
+    );
   }
 }
 
@@ -36,6 +39,7 @@ export async function POST(req: Request) {
     const tempPassword = randomPassword();
     const hashed = await bcrypt.hash(tempPassword, 10);
 
+    // create employee
     const { rows } = await query`
       INSERT INTO employees (name, email, department, position, salary)
       VALUES (${body.name}, ${body.email}, ${body.department}, ${body.position}, ${body.salary})
@@ -43,9 +47,10 @@ export async function POST(req: Request) {
     `;
     const newEmp = rows[0];
 
+    // create linked user
     await query`
-      INSERT INTO users (username, password, role, employee_id)
-      VALUES (${newEmp.email}, ${hashed}, 'employee', ${newEmp.id})
+      INSERT INTO users (username, email, password_hash, role)
+      VALUES (${newEmp.email}, ${newEmp.email}, ${hashed}, 'employee')
     `;
 
     return NextResponse.json({
@@ -55,7 +60,10 @@ export async function POST(req: Request) {
     });
   } catch (err: unknown) {
     console.error("Employees POST error:", err);
-    return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Bad request" },
+      { status: 400 }
+    );
   }
 }
 
@@ -78,13 +86,19 @@ export async function PUT(req: Request) {
     `;
 
     if (!rows.length) {
-      return NextResponse.json({ ok: false, error: "Employee not found" }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, error: "Employee not found" },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({ ok: true, employee: rows[0] });
   } catch (err: unknown) {
     console.error("Employees PUT error:", err);
-    return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Bad request" },
+      { status: 400 }
+    );
   }
 }
 
@@ -93,12 +107,18 @@ export async function DELETE(req: Request) {
   try {
     const { id } = await req.json();
 
-    await query`DELETE FROM users WHERE employee_id = ${id}`;
+    await query`DELETE FROM users WHERE email = (SELECT email FROM employees WHERE id = ${id})`;
     const result = await query`DELETE FROM employees WHERE id = ${id}`;
 
-    return NextResponse.json({ ok: true, removed: (result.rowCount ?? 0) > 0 });
+    return NextResponse.json({
+      ok: true,
+      removed: (result.rowCount ?? 0) > 0,
+    });
   } catch (err: unknown) {
     console.error("Employees DELETE error:", err);
-    return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Bad request" },
+      { status: 400 }
+    );
   }
 }

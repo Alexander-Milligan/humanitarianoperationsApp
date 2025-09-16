@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { pool } from "@/db/db"; // ✅ use pool instead of getDB
 import styles from "./admin.module.css";
 
+/* ---------- Types ---------- */
 type Emp = {
   id: number;
   name: string;
@@ -31,21 +33,17 @@ export default function EmployeeManager() {
   const [targetId, setTargetId] = useState<number | null>(null);
   const [msg, setMsg] = useState<string>("");
 
-  /** Load employees from API */
+  /** Load employees from DB */
   async function load() {
     setLoading(true);
     try {
-      const r = await fetch("/api/employees");
-      const d = await r.json();
-      const employees: Emp[] = (d.employees || []).map((e: any) => ({
-        id: e.id ?? e.employee_id,
-        name: e.name,
-        email: e.email,
-        department: e.department,
-        position: e.position,
-        salary: Number(e.salary) || 0,
-      }));
-      setRows(employees);
+      const res = await fetch("/api/employees");
+      const data = await res.json();
+      if (data.ok) {
+        setRows(data.employees);
+      } else {
+        setRows([]);
+      }
     } catch (err) {
       console.error("Failed to load employees:", err);
       setRows([]);
@@ -109,29 +107,18 @@ export default function EmployeeManager() {
     const body = editing ? { id: editing.id, ...form } : form;
 
     try {
-      const r = await fetch("/api/employees", {
+      const res = await fetch("/api/employees", {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const d = await r.json();
-      if (d.ok) {
+      const data = await res.json();
+      if (data.ok) {
         setShowForm(false);
         await load();
-        window.dispatchEvent(new Event("employees:changed"));
-
-        if (d.account) {
-          window.dispatchEvent(
-            new CustomEvent("account:created", { detail: d.account })
-          );
-          setMsg(
-            `✅ Employee created. Login: ${d.account.username}, Temp password: ${d.account.password}`
-          );
-        } else {
-          setMsg("✅ Employee updated successfully.");
-        }
+        setMsg(editing ? "✅ Employee updated" : "✅ Employee created");
       } else {
-        setMsg(d.error || "Failed to save.");
+        setMsg(data.error || "Failed to save.");
       }
     } catch (err) {
       console.error(err);
@@ -143,20 +130,19 @@ export default function EmployeeManager() {
   async function confirmDelete() {
     if (!targetId) return;
     try {
-      const r = await fetch("/api/employees", {
+      const res = await fetch("/api/employees", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: targetId }),
       });
-      const d = await r.json();
-      if (d.ok) {
+      const data = await res.json();
+      if (data.ok) {
         setShowDelete(false);
         setTargetId(null);
         await load();
-        window.dispatchEvent(new Event("employees:changed"));
         setMsg("✅ Employee deleted.");
       } else {
-        setMsg(d.error || "Failed to delete.");
+        setMsg(data.error || "Failed to delete.");
       }
     } catch (err) {
       console.error(err);
