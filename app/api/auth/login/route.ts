@@ -34,9 +34,15 @@ export async function POST(req: Request) {
 
     const user = rows[0];
 
-    // 🔍 Debug logging
+    // 🔍 Debug logging to Vercel logs
     console.log("DEBUG: login attempt", { identifier, password });
-    console.log("DEBUG: db user", user);
+    console.log("DEBUG: db user", {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      hashLength: user.password_hash?.length,
+      hashSnippet: user.password_hash?.slice(0, 20),
+    });
 
     let isValid = false;
     try {
@@ -45,11 +51,18 @@ export async function POST(req: Request) {
       console.error("bcrypt error:", err);
     }
 
-    console.log("DEBUG: compare result", isValid);
+    console.log("DEBUG: bcrypt.compare result", isValid);
 
     if (!isValid) {
       return NextResponse.json(
-        { ok: false, error: "Password did not match", identifier },
+        {
+          ok: false,
+          error: "Password did not match",
+          identifier,
+          incomingPassword: password,
+          storedHashLength: user.password_hash?.length,
+          storedHashSnippet: user.password_hash?.slice(0, 20),
+        },
         { status: 401 }
       );
     }
