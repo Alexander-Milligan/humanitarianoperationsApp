@@ -17,8 +17,13 @@ export default function CheckHashTest() {
         body: JSON.stringify({ password, hash }),
       });
 
-      const data = await res.json();
-      setResult(JSON.stringify(data, null, 2));
+      const text = await res.text(); // read raw text
+      try {
+        const data = JSON.parse(text); // parse if valid JSON
+        setResult(JSON.stringify(data, null, 2));
+      } catch {
+        setResult("❌ Not valid JSON: " + text);
+      }
     } catch (err) {
       setResult("❌ Error calling API: " + (err as Error).message);
     }
