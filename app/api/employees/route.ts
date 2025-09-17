@@ -5,10 +5,8 @@ import { NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
 import bcrypt from "bcryptjs";
 
-/* Utility: random temp password */
 function randomPassword(length = 8) {
-  const chars =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   return Array.from({ length })
     .map(() => chars[Math.floor(Math.random() * chars.length)])
     .join("");
@@ -28,7 +26,7 @@ export async function GET() {
         e.department,
         e.position,
         e.salary,
-        e.avatar_url AS avatar
+        e.avatar_url
       FROM employees e
       JOIN users u ON e.user_id = u.id
       ORDER BY e.id ASC
@@ -36,10 +34,7 @@ export async function GET() {
     return NextResponse.json({ ok: true, employees: result.rows });
   } catch (err) {
     console.error("Employees GET error:", err);
-    return NextResponse.json(
-      { ok: false, error: "Failed to fetch employees" },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, error: "Failed to fetch employees" }, { status: 500 });
   }
 }
 
@@ -47,11 +42,9 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
     const tempPassword = randomPassword();
     const hashed = await bcrypt.hash(tempPassword, 10);
 
-    // Step 1: create linked user
     const { rows: userRows } = await sql`
       INSERT INTO users (username, email, password_hash, role, first_name, last_name)
       VALUES (
@@ -66,7 +59,6 @@ export async function POST(req: Request) {
     `;
     const newUser = userRows[0];
 
-    // Step 2: create employee row
     const { rows: empRows } = await sql`
       INSERT INTO employees (user_id, department, position, salary, avatar_url)
       VALUES (${newUser.id}, ${body.department}, ${body.position}, ${body.salary}, ${body.avatar_url || null})
@@ -81,10 +73,7 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("Employees POST error:", err);
-    return NextResponse.json(
-      { ok: false, error: "Bad request" },
-      { status: 400 }
-    );
+    return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
   }
 }
 
@@ -92,8 +81,6 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
-
-    // update employees table (job details only)
     const empUpdate = await sql`
       UPDATE employees
       SET department = COALESCE(${body.department}, department),
@@ -103,21 +90,13 @@ export async function PUT(req: Request) {
       WHERE id = ${body.id}
       RETURNING id, user_id, department, position, salary, avatar_url
     `;
-
     if (!empUpdate.rows.length) {
-      return NextResponse.json(
-        { ok: false, error: "Employee not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ ok: false, error: "Employee not found" }, { status: 404 });
     }
-
     return NextResponse.json({ ok: true, employee: empUpdate.rows[0] });
   } catch (err) {
     console.error("Employees PUT error:", err);
-    return NextResponse.json(
-      { ok: false, error: "Bad request" },
-      { status: 400 }
-    );
+    return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
   }
 }
 
@@ -125,30 +104,15 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const { id } = await req.json();
-
-    // delete employee first, get user_id
-    const empDelete = await sql`
-      DELETE FROM employees WHERE id = ${id}
-      RETURNING user_id
-    `;
+    const empDelete = await sql`DELETE FROM employees WHERE id = ${id} RETURNING user_id`;
     if (!empDelete.rows.length) {
-      return NextResponse.json(
-        { ok: false, error: "Employee not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ ok: false, error: "Employee not found" }, { status: 404 });
     }
-
     const userId = empDelete.rows[0].user_id;
-
-    // then delete linked user
     await sql`DELETE FROM users WHERE id = ${userId}`;
-
     return NextResponse.json({ ok: true, removed: true });
   } catch (err) {
     console.error("Employees DELETE error:", err);
-    return NextResponse.json(
-      { ok: false, error: "Bad request" },
-      { status: 400 }
-    );
+    return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
   }
 }
