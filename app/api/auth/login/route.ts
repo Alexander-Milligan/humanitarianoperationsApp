@@ -27,17 +27,29 @@ export async function POST(req: Request) {
 
     if (rows.length === 0) {
       return NextResponse.json(
-        { ok: false, error: "Invalid credentials" },
+        { ok: false, error: "No user found for identifier", identifier },
         { status: 401 }
       );
     }
 
     const user = rows[0];
-    const isValid = await bcrypt.compare(password, user.password_hash);
+
+    // 🔍 Debug logging
+    console.log("DEBUG: login attempt", { identifier, password });
+    console.log("DEBUG: db user", user);
+
+    let isValid = false;
+    try {
+      isValid = await bcrypt.compare(password, user.password_hash);
+    } catch (err) {
+      console.error("bcrypt error:", err);
+    }
+
+    console.log("DEBUG: compare result", isValid);
 
     if (!isValid) {
       return NextResponse.json(
-        { ok: false, error: "Invalid credentials" },
+        { ok: false, error: "Password did not match", identifier },
         { status: 401 }
       );
     }
@@ -46,6 +58,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
+      message: "✅ Login successful",
       user: {
         id: user.id,
         email: user.email,
