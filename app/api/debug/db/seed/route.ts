@@ -1,4 +1,4 @@
-// app/api/debug/seed/route.ts
+// app/api/debug/db/seed/route.ts
 import { NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
 import bcrypt from "bcryptjs";
@@ -20,9 +20,15 @@ export async function GET() {
     `;
 
     return NextResponse.json({ ok: true, message: "✅ Users seeded" });
-  } catch (err: any) {
+  } catch (err) {
+    if (err instanceof Error) {
+      return NextResponse.json(
+        { ok: false, error: err.message },
+        { status: 500 }
+      );
+    }
     return NextResponse.json(
-      { ok: false, error: err.message },
+      { ok: false, error: "Unknown error occurred" },
       { status: 500 }
     );
   }
