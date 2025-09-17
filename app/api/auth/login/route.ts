@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { username, email, identifier, password } = body;
-    const loginId = identifier || username || email;
+    const loginId = (identifier || username || email || "").trim();
 
     if (!loginId || !password) {
       return NextResponse.json(
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     const { rows } = await sql`
       SELECT id, email, username, password_hash, role, first_name, last_name
       FROM users
-      WHERE email = ${loginId} OR username = ${loginId}
+      WHERE lower(email) = lower(${loginId}) OR username = ${loginId}
       LIMIT 1
     `;
 
