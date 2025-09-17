@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
 import bcrypt from "bcryptjs";
 
-/* Utility to generate random temp password */
+/* Utility: random temp password */
 function randomPassword(length = 8) {
   const chars =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -37,7 +37,7 @@ export async function GET() {
   } catch (err) {
     console.error("Employees GET error:", err);
     return NextResponse.json(
-      { ok: false, error: "Failed to fetch" },
+      { ok: false, error: "Failed to fetch employees" },
       { status: 500 }
     );
   }
@@ -93,7 +93,7 @@ export async function PUT(req: Request) {
   try {
     const body = await req.json();
 
-    // update employees table (job details)
+    // update employees table (job details only)
     const empUpdate = await sql`
       UPDATE employees
       SET department = COALESCE(${body.department}, department),
