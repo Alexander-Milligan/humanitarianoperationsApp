@@ -8,13 +8,12 @@ import bcrypt from "bcryptjs";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { identifier, password } = body; // identifier can be email OR username
+    const { identifier, password } = body;
 
     if (!identifier || !password) {
       return NextResponse.json({ ok: false, error: "Missing credentials" }, { status: 400 });
     }
 
-    // Look up user by email OR username
     const { rows } = await sql`
       SELECT id, email, username, password_hash, role, first_name, last_name
       FROM users
@@ -27,14 +26,11 @@ export async function POST(req: Request) {
     }
 
     const user = rows[0];
-
-    // Compare password
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {
       return NextResponse.json({ ok: false, error: "Invalid credentials" }, { status: 401 });
     }
 
-    // Update last login timestamp
     await sql`UPDATE users SET last_login = NOW() WHERE id = ${user.id}`;
 
     return NextResponse.json({

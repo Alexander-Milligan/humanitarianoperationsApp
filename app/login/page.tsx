@@ -6,7 +6,7 @@ import styles from "./login.module.css"; // ✅ keep your CSS module
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
+  const [identifier, setIdentifier] = useState(""); // 🔑 allow username OR email
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,23 +24,24 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ identifier, password }), // ✅ changed
       });
 
       const data = await res.json();
-      if (data.ok) {
-        sessionStorage.setItem("token", data.token);
-        sessionStorage.setItem("role", data.role);
+      if (res.ok && data.ok) {
+        // save role/token in sessionStorage if returned
+        if (data.token) sessionStorage.setItem("token", data.token);
+        sessionStorage.setItem("role", data.user?.role);
 
-        setMessage(`✅ Logged in as ${data.role}`);
+        setMessage(`✅ Logged in as ${data.user?.role}`);
 
-        if (data.role === "admin") {
+        if (data.user?.role === "admin") {
           router.push("/dashboard/admin");
         } else {
           router.push("/dashboard/employee");
         }
       } else {
-        setMessage(`❌ ${data.error}`);
+        setMessage(`❌ ${data.error || "Login failed"}`);
       }
     } catch {
       setMessage("❌ Login failed. Please try again.");
@@ -85,9 +86,9 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className={styles.form}>
             <input
               type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Email or Username" // ✅ clearer placeholder
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
               className={styles.input}
             />
