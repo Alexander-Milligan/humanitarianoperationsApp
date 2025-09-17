@@ -1,39 +1,22 @@
 export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
-import { pool } from "@/db/db";
+import { sql } from "@/db/db"; // ✅ use sql directly
 
 export async function GET() {
   try {
-    // count employees
-    const { rows: empCountRows } = await pool.query(
-      `SELECT COUNT(*)::int AS total_employees FROM employees`
-    );
-    const totalEmployees = empCountRows[0]?.total_employees ?? 0;
-
-    // count departments
-    const { rows: deptCountRows } = await pool.query(
-      `SELECT COUNT(DISTINCT department)::int AS total_departments FROM employees`
-    );
-    const totalDepartments = deptCountRows[0]?.total_departments ?? 0;
-
-    // sum salary
-    const { rows: salaryRows } = await pool.query(
-      `SELECT COALESCE(SUM(salary),0)::int AS total_salary FROM employees`
-    );
-    const totalSalary = salaryRows[0]?.total_salary ?? 0;
+    const employees = await sql`SELECT COUNT(*)::int AS count FROM employees`;
+    const departments = await sql`SELECT COUNT(DISTINCT department)::int AS count FROM employees`;
+    const totalSalary = await sql`SELECT COALESCE(SUM(salary),0)::int AS total FROM employees`;
 
     return NextResponse.json({
       ok: true,
-      employees: totalEmployees,
-      departments: totalDepartments,
-      totalSalary,
+      employees: employees.rows[0].count,
+      departments: departments.rows[0].count,
+      totalSalary: totalSalary.rows[0].total,
     });
-  } catch (err: unknown) {
-    const error = err as Error;
-    console.error("Stats API error:", error);
-    return NextResponse.json(
-      { ok: false, error: error.message || "Failed to load stats" },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error("Stats GET error:", err);
+    return NextResponse.json({ ok: false, error: "Failed" }, { status: 500 });
   }
 }
