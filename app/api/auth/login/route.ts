@@ -8,10 +8,9 @@ import bcrypt from "bcryptjs";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { username, email, identifier, password } = body;
-    const loginId = (identifier || username || email || "").trim();
+    const { identifier, password } = body;
 
-    if (!loginId || !password) {
+    if (!identifier || !password) {
       return NextResponse.json(
         { ok: false, error: "Missing credentials" },
         { status: 400 }
@@ -19,9 +18,10 @@ export async function POST(req: Request) {
     }
 
     const { rows } = await sql`
-      SELECT id, email, username, password_hash, role, first_name, last_name
+      SELECT id, email, username, password_hash, role
       FROM users
-      WHERE lower(email) = lower(${loginId}) OR username = ${loginId}
+      WHERE lower(email) = lower(${identifier})
+         OR lower(username) = lower(${identifier})
       LIMIT 1
     `;
 
@@ -33,8 +33,9 @@ export async function POST(req: Request) {
     }
 
     const user = rows[0];
-    const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) {
+    const isValid = await bcrypt.compare(password, user.password_hash);
+
+    if (!isValid) {
       return NextResponse.json(
         { ok: false, error: "Invalid credentials" },
         { status: 401 }
@@ -50,8 +51,6 @@ export async function POST(req: Request) {
         email: user.email,
         username: user.username,
         role: user.role,
-        first_name: user.first_name,
-        last_name: user.last_name,
       },
     });
   } catch (err) {
