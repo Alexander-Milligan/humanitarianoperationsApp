@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { query } from "../../../db/db";
 
-/* ---------- POST upload avatar ---------- */
+/* ---------- POST: upload avatar (Base64, Vercel safe) ---------- */
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
@@ -17,18 +17,28 @@ export async function POST(req: Request) {
       );
     }
 
+    // Convert file → Base64 string
     const buffer = Buffer.from(await file.arrayBuffer());
+    const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-    // ✅ store directly in DB
-    await query`
+    // Save to DB, using RETURNING to check if it worked
+    const { rows } = await query`
       UPDATE employees
-      SET avatar = ${buffer}
+      SET avatar = ${base64}
       WHERE id = ${userId}
+      RETURNING id
     `;
+
+    if (rows.length === 0) {
+      return NextResponse.json(
+        { ok: false, error: "Employee not found" },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({
       ok: true,
-      message: "Avatar uploaded",
+      url: base64,
     });
   } catch (err) {
     console.error("Upload error:", err);
