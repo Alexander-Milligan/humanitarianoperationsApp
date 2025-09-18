@@ -13,13 +13,12 @@ import {
 import { jwtDecode } from "jwt-decode";
 
 /* ---------- Types ---------- */
-// what the API might actually return (joined users + employees)
 type RawEmp = {
-  id: number | string; // employees.id
-  user_id?: number | string; // employees.user_id (if selected)
+  id: number | string;
+  user_id?: number | string;
   first_name?: string | null;
   last_name?: string | null;
-  username?: string | null; // users.username
+  username?: string | null;
   email: string;
   department: string;
   position: string;
@@ -29,8 +28,8 @@ type RawEmp = {
 };
 
 type Emp = {
-  id: number; // employees.id
-  user_id?: number; // users.id that this employee belongs to
+  id: number;
+  user_id?: number;
   username?: string;
   name: string;
   email: string;
@@ -38,13 +37,14 @@ type Emp = {
   position: string;
   salary: number;
   avatar?: string | null;
+  role?: string; // added so frontend knows their role
 };
 
 type TokenPayload = {
-  id: number; // users.id
+  id: number | string;
   role: "admin" | "employee" | "hr";
   username: string;
-  employeeId?: number; // may be missing
+  employeeId?: number | string;
   exp: number;
 };
 
@@ -71,7 +71,6 @@ export default function Page() {
   const [allEmployees, setAllEmployees] = useState<Emp[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal states
   const [showProfile, setShowProfile] = useState(false);
   const [showUpdate, setShowUpdate] = useState(false);
   const [showLeave, setShowLeave] = useState(false);
@@ -79,7 +78,6 @@ export default function Page() {
   const [showHr, setShowHr] = useState(false);
   const [showContactHr, setShowContactHr] = useState(false);
 
-  // Forms and messages
   const [form, setForm] = useState<Partial<Emp>>({});
   const [leaveForm, setLeaveForm] = useState({
     start: "",
@@ -91,14 +89,11 @@ export default function Page() {
   const [contactHrMsg, setContactHrMsg] = useState("");
   const [contactHrText, setContactHrText] = useState("");
 
-  // HR requests
   const [hrItems, setHrItems] = useState<HrReq[]>([]);
   const [hrLoading, setHrLoading] = useState(false);
 
-  // Avatar upload
   const [uploading, setUploading] = useState(false);
 
-  // My leave requests
   const [myLeaves, setMyLeaves] = useState<LeaveReq[]>([]);
   const [myLeavesLoading, setMyLeavesLoading] = useState(false);
 
@@ -113,7 +108,6 @@ export default function Page() {
         const r = await fetch("/api/employees");
         const d = await r.json();
 
-        // Normalize the API rows into the Emp shape the UI expects
         const raw: RawEmp[] = d.employees || [];
         const normalized: Emp[] = raw.map((row) => {
           const id = Number(row.id);
@@ -123,9 +117,7 @@ export default function Page() {
             .filter(Boolean)
             .join(" ")
             .trim();
-          // prefer explicit name if present, else build from first/last, else fallback to username/email
-          const name =
-            nameFromParts || (row as any).name || row.username || row.email;
+          const name = nameFromParts || row.username || row.email;
 
           return {
             id,
@@ -137,19 +129,17 @@ export default function Page() {
             position: row.position,
             salary: Number(row.salary),
             avatar: row.avatar_url ?? row.avatar ?? null,
+            role: (row as unknown as { role?: string }).role ?? undefined,
           };
         });
 
         setAllEmployees(normalized);
 
-        // Find me: 1) by employeeId if token has it, else
-        // 2) by user_id === decoded.id, else
-        // 3) by username match (case-insensitive)
         const me =
           normalized.find(
-            (e) => decoded.employeeId && e.id === decoded.employeeId
+            (e) => decoded.employeeId && e.id === Number(decoded.employeeId)
           ) ||
-          normalized.find((e) => e.user_id === decoded.id) ||
+          normalized.find((e) => e.user_id === Number(decoded.id)) ||
           normalized.find(
             (e) =>
               e.username &&
@@ -157,6 +147,10 @@ export default function Page() {
               e.username.toLowerCase() === decoded.username.toLowerCase()
           ) ||
           null;
+
+        if (me) {
+          me.role = decoded.role;
+        }
 
         setEmployee(me);
         setForm(me || {});
@@ -172,8 +166,15 @@ export default function Page() {
   }, []);
 
   /* ---------- Helpers ---------- */
-  const nameById = (id: number) =>
-    allEmployees.find((e) => e.id === id)?.name || `#${id}`;
+  const nameById = (id: number) => {
+    // Look up by employee.id OR user_id
+    const emp = allEmployees.find((e) => e.id === id || e.user_id === id);
+    if (!emp) return `User #${id}`;
+    // Prefer full name if available, else username/email
+    return emp.name
+      ? `${emp.name} (${emp.email})`
+      : `${emp.username || emp.email}`;
+  };
 
   const salaryProgress = useMemo(
     () =>
@@ -205,7 +206,7 @@ export default function Page() {
     if (employee) loadMyLeaves();
   }, [employee]);
 
-  /* ---------- HR requests (panel + modal trigger) ---------- */
+  /* ---------- HR requests ---------- */
   async function loadHrRequests() {
     setHrLoading(true);
     try {
@@ -220,16 +221,14 @@ export default function Page() {
     }
   }
 
-  // Load when opening the modal
   useEffect(() => {
-    if (showHr && employee?.department === "HR") {
+    if (showHr && (employee?.department === "HR" || employee?.role === "hr")) {
       loadHrRequests();
     }
   }, [showHr, employee]);
 
-  // Also load once automatically for HR users so the panel shows content
   useEffect(() => {
-    if (employee?.department === "HR") {
+    if (employee?.department === "HR" || employee?.role === "hr") {
       loadHrRequests();
     }
   }, [employee]);
@@ -268,7 +267,7 @@ export default function Page() {
     setUploading(true);
     const fd = new FormData();
     fd.append("file", file);
-    fd.append("userId", String(employee.id)); // using employee.id as per your existing API
+    fd.append("userId", String(employee.id));
 
     try {
       const res = await fetch("/api/upload", { method: "POST", body: fd });
@@ -406,7 +405,6 @@ export default function Page() {
 
       {employee && (
         <>
-          {/* Info Cards */}
           <section className={styles.cards}>
             <div className={`${styles.card} ${styles.cardBlue}`}>
               <div className={styles.cardLabel}>Email</div>
@@ -424,7 +422,6 @@ export default function Page() {
             </div>
           </section>
 
-          {/* Salary + Actions */}
           <section className={styles.grid}>
             <div className={styles.panel}>
               <h3 className={styles.panelTitle}>My Salary Progress</h3>
@@ -471,7 +468,7 @@ export default function Page() {
                 >
                   Request Password Reset
                 </button>
-                {employee.department === "HR" ? (
+                {employee.role === "hr" || employee.department === "HR" ? (
                   <button
                     className={styles.btnLite}
                     onClick={() => setShowHr(true)}
@@ -490,7 +487,6 @@ export default function Page() {
             </div>
           </section>
 
-          {/* My Leave Requests */}
           <section className={styles.panelWide}>
             <div className={styles.toolbar}>
               <h3 className={styles.panelTitle}>My Leave Requests</h3>
@@ -543,8 +539,7 @@ export default function Page() {
             </div>
           </section>
 
-          {/* HR Requests Panel (only for HR department) */}
-          {employee.department === "HR" && (
+          {(employee.role === "hr" || employee.department === "HR") && (
             <section className={styles.panelWide}>
               <div className={styles.toolbar}>
                 <h3 className={styles.panelTitle}>HR Requests</h3>
@@ -589,7 +584,6 @@ export default function Page() {
         </>
       )}
 
-      {/* Profile Modal */}
       {showProfile && employee && (
         <div
           className={styles.modalBackdrop}
@@ -633,7 +627,6 @@ export default function Page() {
         </div>
       )}
 
-      {/* Update Modal */}
       {showUpdate && employee && (
         <div
           className={styles.modalBackdrop}
@@ -686,7 +679,6 @@ export default function Page() {
         </div>
       )}
 
-      {/* Leave Modal */}
       {showLeave && (
         <div
           className={styles.modalBackdrop}
@@ -746,7 +738,6 @@ export default function Page() {
         </div>
       )}
 
-      {/* Password Reset Modal */}
       {showReset && (
         <div
           className={styles.modalBackdrop}
@@ -775,7 +766,6 @@ export default function Page() {
         </div>
       )}
 
-      {/* HR Requests Modal */}
       {showHr && (
         <div className={styles.modalBackdrop} onClick={() => setShowHr(false)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -806,7 +796,6 @@ export default function Page() {
         </div>
       )}
 
-      {/* Contact HR Modal */}
       {showContactHr && (
         <div
           className={styles.modalBackdrop}

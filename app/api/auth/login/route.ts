@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { sql } from "@vercel/postgres";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 export async function POST(req: Request) {
   try {
@@ -67,18 +68,54 @@ export async function POST(req: Request) {
       );
     }
 
+    // update last_login exactly as before
     await sql`UPDATE users SET last_login = NOW() WHERE id = ${user.id}`;
 
-    return NextResponse.json({
+    // Prepare response user object (unchanged)
+    const responseUser = {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+    };
+
+    // Optionally sign a JWT and include employeeId in it if JWT_SECRET exists.
+    // If JWT_SECRET is not set, behaviour is identical to the previous file.
+    let token: string | null = null;
+    const secret = process.env.JWT_SECRET;
+    if (secret) {
+      try {
+        const empQ = await sql`
+          SELECT id FROM employees WHERE user_id = ${user.id} LIMIT 1
+        `;
+        const employeeId = empQ.rows[0]?.id ?? null;
+
+        token = jwt.sign(
+          {
+            id: Number(user.id),
+            username: user.username,
+            role: user.role,
+            employeeId: employeeId ? Number(employeeId) : null,
+          },
+          secret,
+          { expiresIn: "1h" }
+        );
+      } catch (err) {
+        // If token signing fails, log but still return original successful response
+        console.error("JWT sign error:", err);
+        token = null;
+      }
+    }
+
+    // Return the same `ok`, `message`, `user` fields you had — and token if created.
+    const payload: any = {
       ok: true,
       message: "✅ Login successful",
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        role: user.role,
-      },
-    });
+      user: responseUser,
+    };
+    if (token) payload.token = token;
+
+    return NextResponse.json(payload);
   } catch (err) {
     console.error("Login error:", err);
     return NextResponse.json(
