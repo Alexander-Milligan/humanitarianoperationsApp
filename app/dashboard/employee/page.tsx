@@ -167,10 +167,8 @@ export default function Page() {
 
   /* ---------- Helpers ---------- */
   const nameById = (id: number) => {
-    // Look up by employee.id OR user_id
     const emp = allEmployees.find((e) => e.id === id || e.user_id === id);
     if (!emp) return `User #${id}`;
-    // Prefer full name if available, else username/email
     return emp.name
       ? `${emp.name} (${emp.email})`
       : `${emp.username || emp.email}`;
@@ -273,8 +271,8 @@ export default function Page() {
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       const data = await res.json();
       if (data.ok) {
-        setForm({ ...form, avatar: data.filename });
-        setEmployee({ ...employee, avatar: data.filename });
+        setForm({ ...form, avatar: data.url }); // ✅ use data.url
+        setEmployee({ ...employee, avatar: data.url }); // ✅ base64 string
         setMsg("✅ Profile picture updated.");
       } else {
         setMsg(`❌ ${data.error}`);
@@ -283,82 +281,6 @@ export default function Page() {
       setMsg("❌ Upload failed.");
     } finally {
       setUploading(false);
-    }
-  }
-
-  async function submitLeave(e: React.FormEvent) {
-    e.preventDefault();
-    setMsg("");
-    if (!employee) return;
-
-    try {
-      const res = await fetch("/api/leave", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          employeeId: employee.id,
-          start: leaveForm.start,
-          end: leaveForm.end,
-          reason: leaveForm.reason,
-        }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setMsg("✅ Leave request submitted.");
-        setLeaveForm({ start: "", end: "", reason: "" });
-        loadMyLeaves();
-        setTimeout(() => setShowLeave(false), 1500);
-      } else {
-        setMsg(`❌ ${data.error || "Failed to submit leave request."}`);
-      }
-    } catch {
-      setMsg("❌ Failed to submit leave request.");
-    }
-  }
-
-  async function submitReset() {
-    if (!employee) return;
-    setResetMsg("");
-    try {
-      const res = await fetch("/api/password-reset", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: employee.email }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setResetMsg("✅ Password reset request sent.");
-        setTimeout(() => setShowReset(false), 1500);
-      } else {
-        setResetMsg(`❌ ${data.error || "Failed to request reset."}`);
-      }
-    } catch {
-      setResetMsg("❌ Error sending request.");
-    }
-  }
-
-  async function submitContactHr() {
-    if (!employee || !contactHrText.trim()) return;
-    setContactHrMsg("");
-    try {
-      const res = await fetch("/api/hr", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fromId: employee.id, message: contactHrText }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setContactHrMsg("✅ Message sent to HR.");
-        setContactHrText("");
-        setTimeout(() => {
-          setShowContactHr(false);
-          setContactHrMsg("");
-        }, 1500);
-      } else {
-        setContactHrMsg(`❌ ${data.error || "Failed to send message."}`);
-      }
-    } catch {
-      setContactHrMsg("❌ Error sending message.");
     }
   }
 
@@ -374,7 +296,7 @@ export default function Page() {
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
             {employee.avatar && (
               <img
-                src={`/uploads/${employee.avatar}`}
+                src={employee.avatar} // ✅ fixed
                 alt="Profile"
                 style={{ width: "60px", height: "60px", borderRadius: "50%" }}
               />
@@ -403,187 +325,6 @@ export default function Page() {
         )}
       </header>
 
-      {employee && (
-        <>
-          <section className={styles.cards}>
-            <div className={`${styles.card} ${styles.cardBlue}`}>
-              <div className={styles.cardLabel}>Email</div>
-              <div className={styles.cardValue}>{employee.email}</div>
-            </div>
-            <div className={`${styles.card} ${styles.cardGreen}`}>
-              <div className={styles.cardLabel}>Department</div>
-              <div className={styles.cardValue}>{employee.department}</div>
-            </div>
-            <div className={`${styles.card} ${styles.cardRed}`}>
-              <div className={styles.cardLabel}>Salary</div>
-              <div className={styles.cardValue}>
-                £{employee.salary.toLocaleString()}
-              </div>
-            </div>
-          </section>
-
-          <section className={styles.grid}>
-            <div className={styles.panel}>
-              <h3 className={styles.panelTitle}>My Salary Progress</h3>
-              <div className={styles.chart}>
-                <ResponsiveContainer width="100%" height={260}>
-                  <RadialBarChart
-                    innerRadius="40%"
-                    outerRadius="100%"
-                    barSize={30}
-                    data={salaryProgress}
-                  >
-                    <RadialBar background dataKey="value" />
-                    <Legend />
-                    <Tooltip />
-                  </RadialBarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className={styles.panel}>
-              <h3 className={styles.panelTitle}>Quick Actions</h3>
-              <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-                <button
-                  className={styles.btnPrimary}
-                  onClick={() => setShowProfile(true)}
-                >
-                  View Profile
-                </button>
-                <button
-                  className={styles.btnLite}
-                  onClick={() => setShowUpdate(true)}
-                >
-                  Update My Details
-                </button>
-                <button
-                  className={styles.btnDanger}
-                  onClick={() => setShowLeave(true)}
-                >
-                  Request Leave
-                </button>
-                <button
-                  className={styles.btnPrimary}
-                  onClick={() => setShowReset(true)}
-                >
-                  Request Password Reset
-                </button>
-                {employee.role === "hr" || employee.department === "HR" ? (
-                  <button
-                    className={styles.btnLite}
-                    onClick={() => setShowHr(true)}
-                  >
-                    View HR Requests
-                  </button>
-                ) : (
-                  <button
-                    className={styles.btnLite}
-                    onClick={() => setShowContactHr(true)}
-                  >
-                    Contact HR
-                  </button>
-                )}
-              </div>
-            </div>
-          </section>
-
-          <section className={styles.panelWide}>
-            <div className={styles.toolbar}>
-              <h3 className={styles.panelTitle}>My Leave Requests</h3>
-              <button
-                className={styles.btnLite}
-                onClick={() => loadMyLeaves()}
-                title="Refresh"
-              >
-                Refresh
-              </button>
-            </div>
-
-            <div className={styles.tableWrap}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Dates</th>
-                    <th>Reason</th>
-                    <th>Status</th>
-                    <th>Requested</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {myLeavesLoading ? (
-                    <tr>
-                      <td colSpan={5}>Loading…</td>
-                    </tr>
-                  ) : myLeaves.length ? (
-                    myLeaves.map((it) => (
-                      <tr key={it.id}>
-                        <td>{it.id}</td>
-                        <td>
-                          {it.start} → {it.end}
-                        </td>
-                        <td>{it.reason}</td>
-                        <td style={{ textTransform: "capitalize" }}>
-                          {it.status}
-                        </td>
-                        <td>{new Date(it.requestedAt).toLocaleString()}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5}>No leave requests yet.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          {(employee.role === "hr" || employee.department === "HR") && (
-            <section className={styles.panelWide}>
-              <div className={styles.toolbar}>
-                <h3 className={styles.panelTitle}>HR Requests</h3>
-                <button className={styles.btnLite} onClick={loadHrRequests}>
-                  Refresh
-                </button>
-              </div>
-              <div className={styles.tableWrap}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>From</th>
-                      <th>Message</th>
-                      <th>Requested At</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {hrLoading ? (
-                      <tr>
-                        <td colSpan={4}>Loading…</td>
-                      </tr>
-                    ) : hrItems.length ? (
-                      hrItems.map((it) => (
-                        <tr key={it.id}>
-                          <td>{it.id}</td>
-                          <td>{nameById(it.user_id)}</td>
-                          <td>{it.message}</td>
-                          <td>{new Date(it.requested_at).toLocaleString()}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={4}>No HR requests yet.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          )}
-        </>
-      )}
-
       {showProfile && employee && (
         <div
           className={styles.modalBackdrop}
@@ -593,7 +334,7 @@ export default function Page() {
             <h4 className={styles.modalTitle}>Profile</h4>
             {employee.avatar && (
               <img
-                src={`/uploads/${employee.avatar}`}
+                src={employee.avatar} // ✅ fixed
                 alt="Profile"
                 style={{ width: "100px", height: "100px", borderRadius: "50%" }}
               />
@@ -675,154 +416,6 @@ export default function Page() {
                 <button className={styles.btnPrimary}>Save</button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {showLeave && (
-        <div
-          className={styles.modalBackdrop}
-          onClick={() => setShowLeave(false)}
-        >
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h4 className={styles.modalTitle}>Request Leave</h4>
-            {msg && <div className={styles.alert}>{msg}</div>}
-            <form onSubmit={submitLeave} className={styles.formGrid}>
-              <label>
-                <span>Start Date</span>
-                <input
-                  type="date"
-                  className={styles.input}
-                  value={leaveForm.start}
-                  onChange={(e) =>
-                    setLeaveForm({ ...leaveForm, start: e.target.value })
-                  }
-                  required
-                />
-              </label>
-              <label>
-                <span>End Date</span>
-                <input
-                  type="date"
-                  className={styles.input}
-                  value={leaveForm.end}
-                  onChange={(e) =>
-                    setLeaveForm({ ...leaveForm, end: e.target.value })
-                  }
-                  required
-                />
-              </label>
-              <label>
-                <span>Reason</span>
-                <textarea
-                  className={styles.input}
-                  value={leaveForm.reason}
-                  onChange={(e) =>
-                    setLeaveForm({ ...leaveForm, reason: e.target.value })
-                  }
-                  required
-                />
-              </label>
-              <div className={styles.modalActions}>
-                <button
-                  type="button"
-                  className={styles.btnLite}
-                  onClick={() => setShowLeave(false)}
-                >
-                  Cancel
-                </button>
-                <button className={styles.btnPrimary}>Submit</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showReset && (
-        <div
-          className={styles.modalBackdrop}
-          onClick={() => setShowReset(false)}
-        >
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h4 className={styles.modalTitle}>Request Password Reset</h4>
-            {resetMsg && <div className={styles.alert}>{resetMsg}</div>}
-            <p>
-              Are you sure you want to request a password reset for{" "}
-              <strong>{employee?.email}</strong>?
-            </p>
-            <div className={styles.modalActions}>
-              <button
-                type="button"
-                className={styles.btnLite}
-                onClick={() => setShowReset(false)}
-              >
-                Cancel
-              </button>
-              <button className={styles.btnPrimary} onClick={submitReset}>
-                Send Request
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showHr && (
-        <div className={styles.modalBackdrop} onClick={() => setShowHr(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h4 className={styles.modalTitle}>HR Requests</h4>
-            {hrLoading ? (
-              <p>Loading…</p>
-            ) : hrItems.length ? (
-              <ul>
-                {hrItems.map((it) => (
-                  <li key={it.id}>
-                    <strong>#{it.id}</strong> – {it.message} (
-                    {new Date(it.requested_at).toLocaleString()})
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No HR requests yet.</p>
-            )}
-            <div className={styles.modalActions}>
-              <button
-                className={styles.btnLite}
-                onClick={() => setShowHr(false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showContactHr && (
-        <div
-          className={styles.modalBackdrop}
-          onClick={() => setShowContactHr(false)}
-        >
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h4 className={styles.modalTitle}>Contact HR</h4>
-            {contactHrMsg && <div className={styles.alert}>{contactHrMsg}</div>}
-            <textarea
-              className={styles.input}
-              rows={4}
-              placeholder="Write your message..."
-              value={contactHrText}
-              onChange={(e) => setContactHrText(e.target.value)}
-            />
-            <div className={styles.modalActions}>
-              <button
-                type="button"
-                className={styles.btnLite}
-                onClick={() => setShowContactHr(false)}
-              >
-                Cancel
-              </button>
-              <button className={styles.btnPrimary} onClick={submitContactHr}>
-                Send
-              </button>
-            </div>
           </div>
         </div>
       )}

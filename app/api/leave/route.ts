@@ -7,7 +7,7 @@ import { query } from "../../../db/db";
 export async function GET() {
   try {
     const { rows } = await query`
-      SELECT id, employee_id, start_date, end_date, reason, status, requested_at
+      SELECT id, user_id, start_date, end_date, reason, status, requested_at
       FROM leave_requests
       ORDER BY id DESC
     `;
@@ -15,7 +15,7 @@ export async function GET() {
   } catch (err) {
     console.error("Leave GET error:", err);
     return NextResponse.json(
-      { ok: false, error: "Failed to fetch" },
+      { ok: false, error: "Failed to fetch leave requests" },
       { status: 500 }
     );
   }
@@ -25,9 +25,9 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    const { employeeId, start, end, reason } = data;
+    const { userId, start, end, reason } = data;
 
-    if (!employeeId || !start || !end || !reason) {
+    if (!userId || !start || !end || !reason) {
       return NextResponse.json(
         { ok: false, error: "Missing fields" },
         { status: 400 }
@@ -35,16 +35,16 @@ export async function POST(req: Request) {
     }
 
     const { rows } = await query`
-      INSERT INTO leave_requests (employee_id, start_date, end_date, reason)
-      VALUES (${employeeId}, ${start}, ${end}, ${reason})
-      RETURNING id, employee_id, start_date, end_date, reason, status, requested_at
+      INSERT INTO leave_requests (user_id, start_date, end_date, reason)
+      VALUES (${userId}, ${start}, ${end}, ${reason})
+      RETURNING id, user_id, start_date, end_date, reason, status, requested_at
     `;
 
     return NextResponse.json({ ok: true, item: rows[0] });
   } catch (err) {
     console.error("Leave POST error:", err);
     return NextResponse.json(
-      { ok: false, error: "Failed to create" },
+      { ok: false, error: "Failed to create leave request" },
       { status: 500 }
     );
   }
@@ -67,12 +67,12 @@ export async function PATCH(req: Request) {
       UPDATE leave_requests
       SET status = ${status}
       WHERE id = ${id}
-      RETURNING id, employee_id, start_date, end_date, reason, status, requested_at
+      RETURNING id, user_id, start_date, end_date, reason, status, requested_at
     `;
 
-    if (!rows.length) {
+    if (rows.length === 0) {
       return NextResponse.json(
-        { ok: false, error: "Not found" },
+        { ok: false, error: "Leave request not found" },
         { status: 404 }
       );
     }
