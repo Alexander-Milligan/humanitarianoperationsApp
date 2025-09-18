@@ -21,12 +21,12 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const base64 = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-    // Save to DB, using RETURNING to check if it worked
+    // Save into employees.avatar_url (your actual column)
     const { rows } = await query`
       UPDATE employees
-      SET avatar = ${base64}
+      SET avatar_url = ${base64}
       WHERE id = ${userId}
-      RETURNING id
+      RETURNING id, avatar_url
     `;
 
     if (rows.length === 0) {
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ok: true,
-      url: base64,
+      url: rows[0].avatar_url,
     });
   } catch (err) {
     console.error("Upload error:", err);
