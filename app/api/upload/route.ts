@@ -2,8 +2,6 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { query } from "../../../db/db";
-import fs from "fs/promises";
-import path from "path";
 
 /* ---------- POST upload avatar ---------- */
 export async function POST(req: Request) {
@@ -19,26 +17,18 @@ export async function POST(req: Request) {
       );
     }
 
-    // Ensure uploads folder exists
-    const uploadDir = path.join(process.cwd(), "public/uploads");
-    await fs.mkdir(uploadDir, { recursive: true });
-
-    // Save file
     const buffer = Buffer.from(await file.arrayBuffer());
-    const filename = `${Date.now()}-${file.name}`;
-    const filepath = path.join(uploadDir, filename);
-    await fs.writeFile(filepath, buffer);
 
+    // ✅ store directly in DB
     await query`
       UPDATE employees
-      SET avatar = ${filename}
+      SET avatar = ${buffer}
       WHERE id = ${userId}
     `;
 
     return NextResponse.json({
       ok: true,
-      filename,
-      url: `/uploads/${filename}`,
+      message: "Avatar uploaded",
     });
   } catch (err) {
     console.error("Upload error:", err);

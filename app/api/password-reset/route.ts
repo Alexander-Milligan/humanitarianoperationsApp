@@ -4,22 +4,7 @@ import { NextResponse } from "next/server";
 import { query } from "../../../db/db";
 import bcrypt from "bcryptjs";
 
-/* ---------- GET: list all reset requests (admin) ---------- */
-export async function GET() {
-  try {
-    const { rows } = await query`
-      SELECT id, email, requested_at
-      FROM password_resets
-      ORDER BY requested_at DESC
-    `;
-    return NextResponse.json({ ok: true, items: rows });
-  } catch (err) {
-    console.error("PasswordReset GET error:", err);
-    return NextResponse.json({ ok: false, error: "Failed to load requests" }, { status: 500 });
-  }
-}
-
-/* ---------- POST: add new request (staff) ---------- */
+/* ---------- POST: add new request ---------- */
 export async function POST(req: Request) {
   try {
     const { email } = await req.json();
@@ -27,6 +12,15 @@ export async function POST(req: Request) {
     if (!email) {
       return NextResponse.json({ ok: false, error: "Email is required" }, { status: 400 });
     }
+
+    // ✅ ensure table exists
+    await query`
+      CREATE TABLE IF NOT EXISTS password_resets (
+        id SERIAL PRIMARY KEY,
+        email TEXT NOT NULL,
+        requested_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
 
     const { rows } = await query`
       INSERT INTO password_resets (email)
@@ -41,21 +35,22 @@ export async function POST(req: Request) {
   }
 }
 
-/* ---------- PATCH: complete reset (admin) ---------- */
+/* ---------- PATCH: complete reset ---------- */
 export async function PATCH(req: Request) {
   try {
     const { id, email, newPassword } = await req.json();
 
     if (!id || !email || !newPassword) {
-      return NextResponse.json({ ok: false, error: "id, email and newPassword are required" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "id, email and newPassword required" }, { status: 400 });
     }
 
     if (String(newPassword).length < 6) {
-      return NextResponse.json({ ok: false, error: "Password must be at least 6 characters" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "Password must be >= 6 chars" }, { status: 400 });
     }
 
     const hashed = await bcrypt.hash(String(newPassword), 10);
 
+    // ✅ use correct column
     const { rows } = await query`
       UPDATE users
       SET password_hash = ${hashed}
