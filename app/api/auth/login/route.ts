@@ -6,10 +6,37 @@ import { sql } from "@vercel/postgres";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+/* ---------- Types ---------- */
+interface DbUser {
+  id: number;
+  email: string;
+  username: string;
+  password_hash: string;
+  role: string;
+}
+
+interface ResponseUser {
+  id: number;
+  email: string;
+  username: string;
+  role: string;
+}
+
+interface LoginResponse {
+  ok: boolean;
+  message: string;
+  user: ResponseUser;
+  token?: string;
+}
+
+/* ---------- POST handler ---------- */
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { identifier, password } = body;
+    const { identifier, password } = body as {
+      identifier?: string;
+      password?: string;
+    };
 
     if (!identifier || !password) {
       return NextResponse.json(
@@ -18,7 +45,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { rows } = await sql`
+    const { rows } = await sql<DbUser>`
       SELECT id, email, username, password_hash, role
       FROM users
       WHERE lower(email) = lower(${identifier})
@@ -35,8 +62,8 @@ export async function POST(req: Request) {
 
     const user = rows[0];
 
-    // 🔍 Debug logging to Vercel logs
-    console.log("DEBUG: login attempt", { identifier, password });
+    // 🔍 Debug logging
+    console.log("DEBUG: login attempt", { identifier });
     console.log("DEBUG: db user", {
       id: user.id,
       username: user.username,
@@ -52,63 +79,55 @@ export async function POST(req: Request) {
       console.error("bcrypt error:", err);
     }
 
-    console.log("DEBUG: bcrypt.compare result", isValid);
-
     if (!isValid) {
       return NextResponse.json(
         {
           ok: false,
           error: "Password did not match",
           identifier,
-          incomingPassword: password,
-          storedHashLength: user.password_hash?.length,
-          storedHashSnippet: user.password_hash?.slice(0, 20),
         },
         { status: 401 }
       );
     }
 
-    // update last_login exactly as before
+    // update last_login
     await sql`UPDATE users SET last_login = NOW() WHERE id = ${user.id}`;
 
-    // Prepare response user object (unchanged)
-    const responseUser = {
+    // Prepare response user object
+    const responseUser: ResponseUser = {
       id: user.id,
       email: user.email,
       username: user.username,
       role: user.role,
     };
 
-    // Optionally sign a JWT and include employeeId in it if JWT_SECRET exists.
-    // If JWT_SECRET is not set, behaviour is identical to the previous file.
+    // Optionally sign a JWT
     let token: string | null = null;
     const secret = process.env.JWT_SECRET;
     if (secret) {
       try {
-        const empQ = await sql`
+        const empQ = await sql<{ id: number }>`
           SELECT id FROM employees WHERE user_id = ${user.id} LIMIT 1
         `;
         const employeeId = empQ.rows[0]?.id ?? null;
 
         token = jwt.sign(
           {
-            id: Number(user.id),
+            id: user.id,
             username: user.username,
             role: user.role,
-            employeeId: employeeId ? Number(employeeId) : null,
+            employeeId: employeeId ?? null,
           },
           secret,
           { expiresIn: "1h" }
         );
       } catch (err) {
-        // If token signing fails, log but still return original successful response
         console.error("JWT sign error:", err);
-        token = null;
       }
     }
 
-    // Return the same `ok`, `message`, `user` fields you had — and token if created.
-    const payload: any = {
+    // Build typed response payload
+    const payload: LoginResponse = {
       ok: true,
       message: "✅ Login successful",
       user: responseUser,
