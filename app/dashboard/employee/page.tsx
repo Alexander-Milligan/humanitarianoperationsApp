@@ -12,21 +12,39 @@ import {
 } from "recharts";
 import { jwtDecode } from "jwt-decode";
 
+/* ---------- Types ---------- */
+// what the API might actually return (joined users + employees)
+type RawEmp = {
+  id: number | string; // employees.id
+  user_id?: number | string; // employees.user_id (if selected)
+  first_name?: string | null;
+  last_name?: string | null;
+  username?: string | null; // users.username
+  email: string;
+  department: string;
+  position: string;
+  salary: number | string;
+  avatar_url?: string | null;
+  avatar?: string | null;
+};
+
 type Emp = {
-  id: number;
+  id: number; // employees.id
+  user_id?: number; // users.id that this employee belongs to
+  username?: string;
   name: string;
   email: string;
   department: string;
   position: string;
   salary: number;
-  avatar?: string;
+  avatar?: string | null;
 };
 
 type TokenPayload = {
-  id: number;
-  role: "admin" | "employee";
+  id: number; // users.id
+  role: "admin" | "employee" | "hr";
   username: string;
-  employeeId?: number;
+  employeeId?: number; // may be missing
   exp: number;
 };
 
@@ -90,18 +108,58 @@ export default function Page() {
       try {
         const token = sessionStorage.getItem("token");
         if (!token) throw new Error("No token found");
-
         const decoded: TokenPayload = jwtDecode(token);
-        if (!decoded.employeeId) throw new Error("No employeeId in token");
 
         const r = await fetch("/api/employees");
         const d = await r.json();
-        const list: Emp[] = d.employees || [];
-        setAllEmployees(list);
 
-        const emp = list.find((e: Emp) => e.id === decoded.employeeId);
-        setEmployee(emp || null);
-        setForm(emp || {});
+        // Normalize the API rows into the Emp shape the UI expects
+        const raw: RawEmp[] = d.employees || [];
+        const normalized: Emp[] = raw.map((row) => {
+          const id = Number(row.id);
+          const user_id = row.user_id != null ? Number(row.user_id) : undefined;
+          const nameFromParts = [row.first_name ?? "", row.last_name ?? ""]
+            .map((s) => s?.trim())
+            .filter(Boolean)
+            .join(" ")
+            .trim();
+          // prefer explicit name if present, else build from first/last, else fallback to username/email
+          const name =
+            nameFromParts || (row as any).name || row.username || row.email;
+
+          return {
+            id,
+            user_id,
+            username: row.username ?? undefined,
+            name,
+            email: row.email,
+            department: row.department,
+            position: row.position,
+            salary: Number(row.salary),
+            avatar: row.avatar_url ?? row.avatar ?? null,
+          };
+        });
+
+        setAllEmployees(normalized);
+
+        // Find me: 1) by employeeId if token has it, else
+        // 2) by user_id === decoded.id, else
+        // 3) by username match (case-insensitive)
+        const me =
+          normalized.find(
+            (e) => decoded.employeeId && e.id === decoded.employeeId
+          ) ||
+          normalized.find((e) => e.user_id === decoded.id) ||
+          normalized.find(
+            (e) =>
+              e.username &&
+              decoded.username &&
+              e.username.toLowerCase() === decoded.username.toLowerCase()
+          ) ||
+          null;
+
+        setEmployee(me);
+        setForm(me || {});
       } catch (e) {
         console.error(e);
         setEmployee(null);
@@ -210,7 +268,7 @@ export default function Page() {
     setUploading(true);
     const fd = new FormData();
     fd.append("file", file);
-    fd.append("userId", String(employee.id)); // demo: userId mirrors employee.id
+    fd.append("userId", String(employee.id)); // using employee.id as per your existing API
 
     try {
       const res = await fetch("/api/upload", { method: "POST", body: fd });
@@ -717,7 +775,7 @@ export default function Page() {
         </div>
       )}
 
-      {/* HR Requests Modal (unchanged behavior, only opens if HR clicks the button) */}
+      {/* HR Requests Modal */}
       {showHr && (
         <div className={styles.modalBackdrop} onClick={() => setShowHr(false)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
