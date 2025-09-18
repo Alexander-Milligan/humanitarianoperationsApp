@@ -18,6 +18,7 @@ export async function GET() {
     const result = await sql`
       SELECT 
         e.id,
+        e.user_id,               -- ✅ add this so dashboard can match decoded.id
         u.first_name,
         u.last_name,
         u.email,
