@@ -19,11 +19,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // Save to public/uploads
+    // Ensure uploads folder exists
+    const uploadDir = path.join(process.cwd(), "public/uploads");
+    await fs.mkdir(uploadDir, { recursive: true });
+
+    // Save file
     const buffer = Buffer.from(await file.arrayBuffer());
     const filename = `${Date.now()}-${file.name}`;
-    const filepath = path.join(process.cwd(), "public/uploads", filename);
-
+    const filepath = path.join(uploadDir, filename);
     await fs.writeFile(filepath, buffer);
 
     await query`

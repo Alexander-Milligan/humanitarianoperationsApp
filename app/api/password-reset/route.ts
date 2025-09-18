@@ -56,7 +56,6 @@ export async function PATCH(req: Request) {
 
     const hashed = await bcrypt.hash(String(newPassword), 10);
 
-    // ✅ FIX: use password_hash, not password. Match by email.
     const { rows } = await query`
       UPDATE users
       SET password_hash = ${hashed}
