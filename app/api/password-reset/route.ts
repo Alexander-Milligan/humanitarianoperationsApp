@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { query } from "../../../db/db";
 import bcrypt from "bcryptjs";
 
-/* GET: list all reset requests (for admin) */
+/* ---------- GET: list all reset requests (admin) ---------- */
 export async function GET() {
   try {
     const { rows } = await query`
@@ -19,7 +19,7 @@ export async function GET() {
   }
 }
 
-/* POST: add new request (for staff) */
+/* ---------- POST: add new request (staff) ---------- */
 export async function POST(req: Request) {
   try {
     const { email } = await req.json();
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   }
 }
 
-/* PATCH: complete reset (for admin) */
+/* ---------- PATCH: complete reset (admin) ---------- */
 export async function PATCH(req: Request) {
   try {
     const { id, email, newPassword } = await req.json();
@@ -56,10 +56,11 @@ export async function PATCH(req: Request) {
 
     const hashed = await bcrypt.hash(String(newPassword), 10);
 
+    // ✅ FIX: use password_hash, not password. Match by email.
     const { rows } = await query`
       UPDATE users
-      SET password = ${hashed}
-      WHERE username = ${email}
+      SET password_hash = ${hashed}
+      WHERE lower(email) = lower(${email})
       RETURNING id
     `;
 

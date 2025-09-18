@@ -2,7 +2,10 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { query } from "../../../db/db";
+import fs from "fs/promises";
+import path from "path";
 
+/* ---------- POST upload avatar ---------- */
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
@@ -16,17 +19,29 @@ export async function POST(req: Request) {
       );
     }
 
-    const fakeFilename = `${Date.now()}-${file.name}`;
+    // Save to public/uploads
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const filename = `${Date.now()}-${file.name}`;
+    const filepath = path.join(process.cwd(), "public/uploads", filename);
+
+    await fs.writeFile(filepath, buffer);
 
     await query`
       UPDATE employees
-      SET avatar = ${fakeFilename}
+      SET avatar = ${filename}
       WHERE id = ${userId}
     `;
 
-    return NextResponse.json({ ok: true, filename: fakeFilename });
+    return NextResponse.json({
+      ok: true,
+      filename,
+      url: `/uploads/${filename}`,
+    });
   } catch (err) {
     console.error("Upload error:", err);
-    return NextResponse.json({ ok: false, error: "Upload failed" }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "Upload failed" },
+      { status: 500 }
+    );
   }
 }
