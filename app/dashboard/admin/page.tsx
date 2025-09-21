@@ -32,6 +32,19 @@ type Emp = {
   avatar_url?: string | null;
 };
 
+type RawEmp = {
+  id: number;
+  user_id: number;
+  email: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  username?: string | null;
+  department: string;
+  position: string;
+  salary?: number | string | null;
+  avatar_url?: string | null;
+};
+
 type LeaveReq = {
   id: number;
   employeeId: number;
@@ -76,7 +89,7 @@ export default function Page() {
 
   const [leaveMsg, setLeaveMsg] = useState("");
   const [resetMsg, setResetMsg] = useState("");
-  const [hrMsg, setHrMsg] = useState("");
+  const [hrMsg] = useState(""); // not used yet, keep placeholder
 
   const [newAccount, setNewAccount] = useState<NewAccount | null>(null);
 
@@ -96,7 +109,7 @@ export default function Page() {
         const r = await fetch("/api/employees");
         const d = await r.json();
 
-        const employees: Emp[] = (d.employees || []).map((e: any) => ({
+        const employees: Emp[] = (d.employees || []).map((e: RawEmp) => ({
           id: e.id,
           user_id: e.user_id,
           email: e.email,
@@ -106,7 +119,7 @@ export default function Page() {
               : e.username || `#${e.id}`,
           department: e.department,
           position: e.position,
-          salary: Number(e.salary) || 0,
+          salary: e.salary ? Number(e.salary) : 0,
           avatar_url: e.avatar_url,
         }));
 
