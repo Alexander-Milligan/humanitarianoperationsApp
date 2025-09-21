@@ -35,6 +35,40 @@ export async function POST(req: Request) {
   }
 }
 
+/* ---------- GET: list pending reset requests ---------- */
+export async function GET() {
+  try {
+    // make sure the table exists
+    await query`
+      CREATE TABLE IF NOT EXISTS password_resets (
+        id SERIAL PRIMARY KEY,
+        email TEXT NOT NULL,
+        requested_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+
+    const { rows } = await query`
+      SELECT id, email, requested_at
+      FROM password_resets
+      ORDER BY requested_at DESC
+    `;
+
+    const items = rows.map((r) => ({
+      id: r.id,
+      email: r.email,
+      requestedAt: r.requested_at, // 👈 rename to match frontend
+    }));
+
+    return NextResponse.json({ ok: true, items });
+  } catch (err) {
+    console.error("PasswordReset GET error:", err);
+    return NextResponse.json(
+      { ok: false, error: "Failed to load reset requests" },
+      { status: 500 }
+    );
+  }
+}
+
 /* ---------- PATCH: complete reset ---------- */
 export async function PATCH(req: Request) {
   try {
