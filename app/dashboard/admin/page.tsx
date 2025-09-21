@@ -322,7 +322,7 @@ export default function Page() {
 
       <header className={styles.hero}>
         <div>
-          <h1 className={styles.title}>HR Admin Dashboard ⚡</h1>
+          <h1 className={styles.title}>HR Admin Dashboard </h1>
           <p className={styles.subtitle}>
             Insights, requests & workforce management
           </p>
