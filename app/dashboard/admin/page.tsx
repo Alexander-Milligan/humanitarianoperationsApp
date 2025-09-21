@@ -74,7 +74,7 @@ export default function Page() {
   const [resetItems, setResetItems] = useState<PasswordReset[]>([]);
   const [resetLoading, setResetLoading] = useState(true);
 
-  // Messages (separate per section so errors show in the right place)
+  // Messages
   const [leaveMsg, setLeaveMsg] = useState("");
   const [resetMsg, setResetMsg] = useState("");
   const [hrMsg, setHrMsg] = useState("");
@@ -328,7 +328,7 @@ export default function Page() {
         </div>
       </header>
 
-      {/* KPI cards */}
+      {/* KPI cards    */}
       <section className={styles.cards}>
         <div className={`${styles.card} ${styles.cardBlue}`}>
           <div className={styles.cardLabel}>Employees</div>
@@ -350,7 +350,7 @@ export default function Page() {
         </div>
       </section>
 
-      {/* Charts */}
+      {/* Charts   */}
       <section className={styles.grid}>
         <div className={styles.panel}>
           <h3 className={styles.panelTitle}>Employees by Department</h3>
@@ -420,7 +420,7 @@ export default function Page() {
       <EmployeeManager />
       <br />
 
-      {/* Leave Requests Panel */}
+      {/* Leave Requests Panel   */}
       <section className={styles.panelWide}>
         <h3 className={styles.panelTitle}>Leave Requests</h3>
         {leaveMsg && <div className={styles.alert}>{leaveMsg}</div>}
@@ -482,45 +482,65 @@ export default function Page() {
       </section>
       <br />
 
-      {/* Password Reset + HR Requests side-by-side */}
+      {/* Password Reset   + HR Requests  */}
       <section className={styles.twoColGrid}>
         <div className={styles.panelHalf}>
-          <h3 className={styles.panelTitle}>Password Reset Requests</h3>
-          {resetMsg && <div className={styles.alert}>{resetMsg}</div>}
+          <h3 className={styles.panelTitle}>🔑 Password Reset Requests</h3>
+
+          {resetMsg && (
+            <div
+              className={`${styles.alert} ${
+                resetMsg.startsWith("✅")
+                  ? styles.alertSuccess
+                  : styles.alertError
+              }`}
+            >
+              {resetMsg}
+            </div>
+          )}
+
           <div className={styles.tableWrap}>
             <table className={styles.table}>
               <thead>
                 <tr>
                   <th>ID</th>
                   <th>Email</th>
-                  <th>Requested At</th>
+                  <th>Requested</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {resetLoading ? (
                   <tr>
-                    <td colSpan={4}>Loading…</td>
+                    <td colSpan={4}>⏳ Loading reset requests…</td>
                   </tr>
                 ) : resetItems.length ? (
                   resetItems.map((it) => (
                     <tr key={it.id}>
                       <td>{it.id}</td>
-                      <td>{it.email}</td>
-                      <td>{new Date(it.requestedAt).toLocaleString()}</td>
+                      <td>
+                        <code>{it.email}</code>
+                      </td>
+                      <td>
+                        {new Date(it.requestedAt).toLocaleString(undefined, {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </td>
                       <td>
                         <button
                           className={styles.btnPrimary}
                           onClick={() => openResetModal(it)}
+                          title={`Set a new password for ${it.email}`}
                         >
-                          Set Password
+                          🔧 Set Password
                         </button>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4}>No password reset requests.</td>
+                    <td colSpan={4}>✅ No pending password reset requests</td>
                   </tr>
                 )}
               </tbody>
