@@ -23,26 +23,11 @@ import EmployeeManager from "./EmployeeManager";
 /* ---------- Types ---------- */
 type Emp = {
   id: number;
-  user_id: number;
+  name: string;
   email: string;
-  fullName: string;
   department: string;
   position: string;
   salary: number;
-  avatar_url?: string | null;
-};
-
-type RawEmp = {
-  id: number;
-  user_id: number;
-  email: string;
-  first_name?: string | null;
-  last_name?: string | null;
-  username?: string | null;
-  department: string;
-  position: string;
-  salary?: number | string | null;
-  avatar_url?: string | null;
 };
 
 type LeaveReq = {
@@ -74,25 +59,30 @@ type NewAccount = {
 };
 
 export default function Page() {
-  /* ---------- State ---------- */
   const [rows, setRows] = useState<Emp[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Leave state
   const [leaveItems, setLeaveItems] = useState<LeaveReq[]>([]);
   const [leaveLoading, setLeaveLoading] = useState(true);
 
+  // HR state
   const [hrItems, setHrItems] = useState<HrReq[]>([]);
   const [hrLoading, setHrLoading] = useState(true);
 
+  // Password reset state
   const [resetItems, setResetItems] = useState<PasswordReset[]>([]);
   const [resetLoading, setResetLoading] = useState(true);
 
+  // Messages (separate per section so errors show in the right place)
   const [leaveMsg, setLeaveMsg] = useState("");
   const [resetMsg, setResetMsg] = useState("");
-  const [hrMsg] = useState(""); // not used yet, keep placeholder
+  const [hrMsg, setHrMsg] = useState("");
 
+  // New account modal
   const [newAccount, setNewAccount] = useState<NewAccount | null>(null);
 
+  // Reset Password modal
   const [resetOpen, setResetOpen] = useState(false);
   const [resetSaving, setResetSaving] = useState(false);
   const [resetForm, setResetForm] = useState<{
@@ -102,26 +92,29 @@ export default function Page() {
     confirm: string;
   }>({ id: null, email: "", newPassword: "", confirm: "" });
 
-  /* ---------- Load Employees ---------- */
+  /* ---------- Load employees ---------- */
   useEffect(() => {
     const load = async () => {
       try {
         const r = await fetch("/api/employees");
         const d = await r.json();
 
-        const employees: Emp[] = (d.employees || []).map((e: RawEmp) => ({
-          id: e.id,
-          user_id: e.user_id,
-          email: e.email,
-          fullName:
-            e.first_name && e.last_name
-              ? `${e.first_name} ${e.last_name}`
-              : e.username || `#${e.id}`,
-          department: e.department,
-          position: e.position,
-          salary: e.salary ? Number(e.salary) : 0,
-          avatar_url: e.avatar_url,
-        }));
+        const employees: Emp[] = (d.employees || []).map((e: unknown) => {
+          const emp = e as Emp & { salary?: number | string };
+          return {
+            id: emp.id,
+            name: emp.name,
+            email: emp.email,
+            department: emp.department,
+            position: emp.position,
+            salary:
+              emp?.salary !== undefined && emp?.salary !== null
+                ? typeof emp.salary === "number"
+                  ? emp.salary
+                  : Number(emp.salary) || 0
+                : 0,
+          };
+        });
 
         setRows(employees);
       } catch (err) {
@@ -138,7 +131,7 @@ export default function Page() {
     return () => window.removeEventListener("employees:changed", refresh);
   }, []);
 
-  /* ---------- New Account Listener ---------- */
+  /* ---------- Listen for new accounts ---------- */
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<NewAccount>).detail;
@@ -149,52 +142,55 @@ export default function Page() {
       window.removeEventListener("account:created", handler as EventListener);
   }, []);
 
-  /* ---------- Load Leave Requests ---------- */
+  /* ---------- Load leave requests ---------- */
+  async function loadLeave() {
+    try {
+      const r = await fetch("/api/leave");
+      const d = await r.json();
+      setLeaveItems(d.items || []);
+    } catch {
+      setLeaveItems([]);
+    } finally {
+      setLeaveLoading(false);
+    }
+  }
   useEffect(() => {
-    (async () => {
-      try {
-        const r = await fetch("/api/leave");
-        const d = await r.json();
-        setLeaveItems(d.items || []);
-      } catch {
-        setLeaveItems([]);
-      } finally {
-        setLeaveLoading(false);
-      }
-    })();
+    loadLeave();
   }, []);
 
-  /* ---------- Load HR Requests ---------- */
+  /* ---------- Load HR requests ---------- */
+  async function loadHr() {
+    try {
+      const r = await fetch("/api/hr");
+      const d = await r.json();
+      setHrItems(d.items || []);
+    } catch {
+      setHrItems([]);
+    } finally {
+      setHrLoading(false);
+    }
+  }
   useEffect(() => {
-    (async () => {
-      try {
-        const r = await fetch("/api/hr");
-        const d = await r.json();
-        setHrItems(d.items || []);
-      } catch {
-        setHrItems([]);
-      } finally {
-        setHrLoading(false);
-      }
-    })();
+    loadHr();
   }, []);
 
-  /* ---------- Load Password Resets ---------- */
+  /* ---------- Load password reset requests ---------- */
+  async function loadResets() {
+    try {
+      const r = await fetch("/api/password-reset");
+      const d = await r.json();
+      setResetItems(d.items || []);
+    } catch {
+      setResetItems([]);
+    } finally {
+      setResetLoading(false);
+    }
+  }
   useEffect(() => {
-    (async () => {
-      try {
-        const r = await fetch("/api/password-reset");
-        const d = await r.json();
-        setResetItems(d.items || []);
-      } catch {
-        setResetItems([]);
-      } finally {
-        setResetLoading(false);
-      }
-    })();
+    loadResets();
   }, []);
 
-  /* ---------- KPI Stats ---------- */
+  /* ---------- KPI stats ---------- */
   const stats = useMemo(() => {
     const employees = rows.length;
     const departments = new Set(rows.map((r) => r.department)).size;
@@ -223,7 +219,10 @@ export default function Page() {
       groups[r.department] =
         (groups[r.department] || 0) + (Number(r.salary) || 0);
     });
-    return Object.entries(groups).map(([name, value]) => ({ name, value }));
+    return Object.entries(groups).map(([name, value]) => ({
+      name,
+      value,
+    }));
   }, [rows]);
 
   const headcountTrend = useMemo(() => {
@@ -313,7 +312,7 @@ export default function Page() {
   }
 
   const nameById = (id: number) =>
-    rows.find((e) => e.id === id)?.fullName || `#${id}`;
+    rows.find((e) => e.id === id)?.name || `#${id}`;
 
   /* ---------- Render ---------- */
   return (
@@ -322,14 +321,14 @@ export default function Page() {
 
       <header className={styles.hero}>
         <div>
-          <h1 className={styles.title}>HR Admin Dashboard </h1>
+          <h1 className={styles.title}>HR Admin Dashboard</h1>
           <p className={styles.subtitle}>
-            Insights, requests & workforce management
+            Overview of workforce, requests & compensation
           </p>
         </div>
       </header>
 
-      {/* KPI Cards */}
+      {/* KPI cards */}
       <section className={styles.cards}>
         <div className={`${styles.card} ${styles.cardBlue}`}>
           <div className={styles.cardLabel}>Employees</div>
@@ -361,7 +360,7 @@ export default function Page() {
                 <XAxis dataKey="dept" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="employees" radius={[8, 8, 0, 0]} fill="#0d6efd" />
+                <Bar dataKey="employees" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -397,8 +396,8 @@ export default function Page() {
               <AreaChart data={headcountTrend}>
                 <defs>
                   <linearGradient id="hc" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopOpacity={0.6} stopColor="#0d6efd" />
-                    <stop offset="95%" stopOpacity={0.05} stopColor="#0d6efd" />
+                    <stop offset="5%" stopOpacity={0.6} />
+                    <stop offset="95%" stopOpacity={0.05} />
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="m" />
@@ -407,8 +406,8 @@ export default function Page() {
                 <Area
                   type="monotone"
                   dataKey="emp"
-                  stroke="#0d6efd"
                   strokeWidth={2}
+                  fillOpacity={1}
                   fill="url(#hc)"
                 />
               </AreaChart>
@@ -421,7 +420,7 @@ export default function Page() {
       <EmployeeManager />
       <br />
 
-      {/* Leave Requests */}
+      {/* Leave Requests Panel */}
       <section className={styles.panelWide}>
         <h3 className={styles.panelTitle}>Leave Requests</h3>
         {leaveMsg && <div className={styles.alert}>{leaveMsg}</div>}
@@ -483,70 +482,89 @@ export default function Page() {
       </section>
       <br />
 
-      {/* Password Reset Requests */}
-      <div className={styles.panelHalf}>
-        <h3 className={styles.panelTitle}>🔑 Password Reset Requests</h3>
-
-        {resetMsg && (
-          <div
-            className={`${styles.alert} ${
-              resetMsg.startsWith("✅")
-                ? styles.alertSuccess
-                : styles.alertError
-            }`}
-          >
-            {resetMsg}
-          </div>
-        )}
-
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Email</th>
-                <th>Requested</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {resetLoading ? (
+      {/* Password Reset + HR Requests side-by-side */}
+      <section className={styles.twoColGrid}>
+        <div className={styles.panelHalf}>
+          <h3 className={styles.panelTitle}>Password Reset Requests</h3>
+          {resetMsg && <div className={styles.alert}>{resetMsg}</div>}
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
                 <tr>
-                  <td colSpan={4}>⏳ Loading reset requests…</td>
+                  <th>ID</th>
+                  <th>Email</th>
+                  <th>Requested At</th>
+                  <th>Action</th>
                 </tr>
-              ) : resetItems.length ? (
-                resetItems.map((it) => (
-                  <tr key={it.id}>
-                    <td>{it.id}</td>
-                    <td>
-                      <code>{it.email}</code>
-                    </td>
-                    <td>
-                      {new Date(it.requestedAt).toLocaleString(undefined, {
-                        dateStyle: "medium",
-                        timeStyle: "short",
-                      })}
-                    </td>
-                    <td>
-                      <button
-                        className={styles.btnPrimary}
-                        onClick={() => openResetModal(it)}
-                        title={`Set a new password for ${it.email}`}
-                      >
-                        🔧 Set Password
-                      </button>
-                    </td>
+              </thead>
+              <tbody>
+                {resetLoading ? (
+                  <tr>
+                    <td colSpan={4}>Loading…</td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={4}>✅ No pending password reset requests</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                ) : resetItems.length ? (
+                  resetItems.map((it) => (
+                    <tr key={it.id}>
+                      <td>{it.id}</td>
+                      <td>{it.email}</td>
+                      <td>{new Date(it.requestedAt).toLocaleString()}</td>
+                      <td>
+                        <button
+                          className={styles.btnPrimary}
+                          onClick={() => openResetModal(it)}
+                        >
+                          Set Password
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4}>No password reset requests.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+
+        <div className={styles.panelHalf}>
+          <h3 className={styles.panelTitle}>HR Requests</h3>
+          {hrMsg && <div className={styles.alert}>{hrMsg}</div>}
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>From</th>
+                  <th>Message</th>
+                  <th>Requested At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {hrLoading ? (
+                  <tr>
+                    <td colSpan={4}>Loading…</td>
+                  </tr>
+                ) : hrItems.length ? (
+                  hrItems.map((it) => (
+                    <tr key={it.id}>
+                      <td>{it.id}</td>
+                      <td>{nameById(it.fromId)}</td>
+                      <td>{it.message}</td>
+                      <td>{new Date(it.requestedAt).toLocaleString()}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4}>No HR requests yet.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
 
       {/* New Account Modal */}
       {newAccount && (
@@ -555,7 +573,7 @@ export default function Page() {
           onClick={() => setNewAccount(null)}
         >
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h4 className={styles.modalTitle}>🎉 New Account Created</h4>
+            <h4 className={styles.modalTitle}>New Account Created</h4>
             <p>Share these details with the employee:</p>
             <ul>
               <li>
@@ -584,7 +602,7 @@ export default function Page() {
           onClick={() => setResetOpen(false)}
         >
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h4 className={styles.modalTitle}>🔑 Reset Password</h4>
+            <h4 className={styles.modalTitle}>Reset Password</h4>
             {resetMsg && <div className={styles.alert}>{resetMsg}</div>}
             <form onSubmit={doPasswordReset} className={styles.formGrid}>
               <label>
