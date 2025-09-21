@@ -23,11 +23,13 @@ import EmployeeManager from "./EmployeeManager";
 /* ---------- Types ---------- */
 type Emp = {
   id: number;
-  name: string;
+  user_id: number;
   email: string;
+  fullName: string;
   department: string;
   position: string;
   salary: number;
+  avatar_url?: string | null;
 };
 
 type LeaveReq = {
@@ -59,30 +61,25 @@ type NewAccount = {
 };
 
 export default function Page() {
+  /* ---------- State ---------- */
   const [rows, setRows] = useState<Emp[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Leave state
   const [leaveItems, setLeaveItems] = useState<LeaveReq[]>([]);
   const [leaveLoading, setLeaveLoading] = useState(true);
 
-  // HR state
   const [hrItems, setHrItems] = useState<HrReq[]>([]);
   const [hrLoading, setHrLoading] = useState(true);
 
-  // Password reset state
   const [resetItems, setResetItems] = useState<PasswordReset[]>([]);
   const [resetLoading, setResetLoading] = useState(true);
 
-  // Messages (separate per section so errors show in the right place)
   const [leaveMsg, setLeaveMsg] = useState("");
   const [resetMsg, setResetMsg] = useState("");
   const [hrMsg, setHrMsg] = useState("");
 
-  // New account modal
   const [newAccount, setNewAccount] = useState<NewAccount | null>(null);
 
-  // Reset Password modal
   const [resetOpen, setResetOpen] = useState(false);
   const [resetSaving, setResetSaving] = useState(false);
   const [resetForm, setResetForm] = useState<{
@@ -92,29 +89,26 @@ export default function Page() {
     confirm: string;
   }>({ id: null, email: "", newPassword: "", confirm: "" });
 
-  /* ---------- Load employees ---------- */
+  /* ---------- Load Employees ---------- */
   useEffect(() => {
     const load = async () => {
       try {
         const r = await fetch("/api/employees");
         const d = await r.json();
 
-        const employees: Emp[] = (d.employees || []).map((e: unknown) => {
-          const emp = e as Emp & { salary?: number | string };
-          return {
-            id: emp.id,
-            name: emp.name,
-            email: emp.email,
-            department: emp.department,
-            position: emp.position,
-            salary:
-              emp?.salary !== undefined && emp?.salary !== null
-                ? typeof emp.salary === "number"
-                  ? emp.salary
-                  : Number(emp.salary) || 0
-                : 0,
-          };
-        });
+        const employees: Emp[] = (d.employees || []).map((e: any) => ({
+          id: e.id,
+          user_id: e.user_id,
+          email: e.email,
+          fullName:
+            e.first_name && e.last_name
+              ? `${e.first_name} ${e.last_name}`
+              : e.username || `#${e.id}`,
+          department: e.department,
+          position: e.position,
+          salary: Number(e.salary) || 0,
+          avatar_url: e.avatar_url,
+        }));
 
         setRows(employees);
       } catch (err) {
@@ -131,7 +125,7 @@ export default function Page() {
     return () => window.removeEventListener("employees:changed", refresh);
   }, []);
 
-  /* ---------- Listen for new accounts ---------- */
+  /* ---------- New Account Listener ---------- */
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<NewAccount>).detail;
@@ -142,55 +136,52 @@ export default function Page() {
       window.removeEventListener("account:created", handler as EventListener);
   }, []);
 
-  /* ---------- Load leave requests ---------- */
-  async function loadLeave() {
-    try {
-      const r = await fetch("/api/leave");
-      const d = await r.json();
-      setLeaveItems(d.items || []);
-    } catch {
-      setLeaveItems([]);
-    } finally {
-      setLeaveLoading(false);
-    }
-  }
+  /* ---------- Load Leave Requests ---------- */
   useEffect(() => {
-    loadLeave();
+    (async () => {
+      try {
+        const r = await fetch("/api/leave");
+        const d = await r.json();
+        setLeaveItems(d.items || []);
+      } catch {
+        setLeaveItems([]);
+      } finally {
+        setLeaveLoading(false);
+      }
+    })();
   }, []);
 
-  /* ---------- Load HR requests ---------- */
-  async function loadHr() {
-    try {
-      const r = await fetch("/api/hr");
-      const d = await r.json();
-      setHrItems(d.items || []);
-    } catch {
-      setHrItems([]);
-    } finally {
-      setHrLoading(false);
-    }
-  }
+  /* ---------- Load HR Requests ---------- */
   useEffect(() => {
-    loadHr();
+    (async () => {
+      try {
+        const r = await fetch("/api/hr");
+        const d = await r.json();
+        setHrItems(d.items || []);
+      } catch {
+        setHrItems([]);
+      } finally {
+        setHrLoading(false);
+      }
+    })();
   }, []);
 
-  /* ---------- Load password reset requests ---------- */
-  async function loadResets() {
-    try {
-      const r = await fetch("/api/password-reset");
-      const d = await r.json();
-      setResetItems(d.items || []);
-    } catch {
-      setResetItems([]);
-    } finally {
-      setResetLoading(false);
-    }
-  }
+  /* ---------- Load Password Resets ---------- */
   useEffect(() => {
-    loadResets();
+    (async () => {
+      try {
+        const r = await fetch("/api/password-reset");
+        const d = await r.json();
+        setResetItems(d.items || []);
+      } catch {
+        setResetItems([]);
+      } finally {
+        setResetLoading(false);
+      }
+    })();
   }, []);
 
-  /* ---------- KPI stats ---------- */
+  /* ---------- KPI Stats ---------- */
   const stats = useMemo(() => {
     const employees = rows.length;
     const departments = new Set(rows.map((r) => r.department)).size;
@@ -219,10 +210,7 @@ export default function Page() {
       groups[r.department] =
         (groups[r.department] || 0) + (Number(r.salary) || 0);
     });
-    return Object.entries(groups).map(([name, value]) => ({
-      name,
-      value,
-    }));
+    return Object.entries(groups).map(([name, value]) => ({ name, value }));
   }, [rows]);
 
   const headcountTrend = useMemo(() => {
@@ -312,7 +300,7 @@ export default function Page() {
   }
 
   const nameById = (id: number) =>
-    rows.find((e) => e.id === id)?.name || `#${id}`;
+    rows.find((e) => e.id === id)?.fullName || `#${id}`;
 
   /* ---------- Render ---------- */
   return (
@@ -321,14 +309,14 @@ export default function Page() {
 
       <header className={styles.hero}>
         <div>
-          <h1 className={styles.title}>HR Admin Dashboard</h1>
+          <h1 className={styles.title}>HR Admin Dashboard ⚡</h1>
           <p className={styles.subtitle}>
-            Overview of workforce, requests & compensation
+            Insights, requests & workforce management
           </p>
         </div>
       </header>
 
-      {/* KPI cards */}
+      {/* KPI Cards */}
       <section className={styles.cards}>
         <div className={`${styles.card} ${styles.cardBlue}`}>
           <div className={styles.cardLabel}>Employees</div>
@@ -360,7 +348,7 @@ export default function Page() {
                 <XAxis dataKey="dept" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="employees" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="employees" radius={[8, 8, 0, 0]} fill="#0d6efd" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -396,8 +384,8 @@ export default function Page() {
               <AreaChart data={headcountTrend}>
                 <defs>
                   <linearGradient id="hc" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopOpacity={0.6} />
-                    <stop offset="95%" stopOpacity={0.05} />
+                    <stop offset="5%" stopOpacity={0.6} stopColor="#0d6efd" />
+                    <stop offset="95%" stopOpacity={0.05} stopColor="#0d6efd" />
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="m" />
@@ -406,8 +394,8 @@ export default function Page() {
                 <Area
                   type="monotone"
                   dataKey="emp"
+                  stroke="#0d6efd"
                   strokeWidth={2}
-                  fillOpacity={1}
                   fill="url(#hc)"
                 />
               </AreaChart>
@@ -420,7 +408,7 @@ export default function Page() {
       <EmployeeManager />
       <br />
 
-      {/* Leave Requests Panel */}
+      {/* Leave Requests */}
       <section className={styles.panelWide}>
         <h3 className={styles.panelTitle}>Leave Requests</h3>
         {leaveMsg && <div className={styles.alert}>{leaveMsg}</div>}
@@ -482,7 +470,7 @@ export default function Page() {
       </section>
       <br />
 
-      {/* Password Reset + HR Requests side-by-side */}
+      {/* Password Reset + HR Requests */}
       <section className={styles.twoColGrid}>
         <div className={styles.panelHalf}>
           <h3 className={styles.panelTitle}>Password Reset Requests</h3>
@@ -573,7 +561,7 @@ export default function Page() {
           onClick={() => setNewAccount(null)}
         >
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h4 className={styles.modalTitle}>New Account Created</h4>
+            <h4 className={styles.modalTitle}>🎉 New Account Created</h4>
             <p>Share these details with the employee:</p>
             <ul>
               <li>
@@ -602,7 +590,7 @@ export default function Page() {
           onClick={() => setResetOpen(false)}
         >
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <h4 className={styles.modalTitle}>Reset Password</h4>
+            <h4 className={styles.modalTitle}>🔑 Reset Password</h4>
             {resetMsg && <div className={styles.alert}>{resetMsg}</div>}
             <form onSubmit={doPasswordReset} className={styles.formGrid}>
               <label>
