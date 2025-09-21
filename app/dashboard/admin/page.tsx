@@ -42,9 +42,14 @@ type LeaveReq = {
 
 type HrReq = {
   id: number;
-  fromId: number;
+  user_id: number;
   message: string;
-  requestedAt: string;
+  status: string;
+  requested_at: string;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+  email?: string;
 };
 
 type PasswordReset = {
@@ -570,9 +575,18 @@ export default function Page() {
                   hrItems.map((it) => (
                     <tr key={it.id}>
                       <td>{it.id}</td>
-                      <td>{nameById(it.fromId)}</td>
+                      <td>
+                        {it.first_name && it.last_name
+                          ? `${it.first_name} ${it.last_name}`
+                          : it.username || it.email || `#${it.user_id}`}
+                      </td>
                       <td>{it.message}</td>
-                      <td>{new Date(it.requestedAt).toLocaleString()}</td>
+                      <td>
+                        {new Date(it.requested_at).toLocaleString(undefined, {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </td>
                     </tr>
                   ))
                 ) : (
