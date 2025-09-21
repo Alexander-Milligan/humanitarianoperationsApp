@@ -483,89 +483,70 @@ export default function Page() {
       </section>
       <br />
 
-      {/* Password Reset + HR Requests */}
-      <section className={styles.twoColGrid}>
-        <div className={styles.panelHalf}>
-          <h3 className={styles.panelTitle}>Password Reset Requests</h3>
-          {resetMsg && <div className={styles.alert}>{resetMsg}</div>}
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Email</th>
-                  <th>Requested At</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {resetLoading ? (
-                  <tr>
-                    <td colSpan={4}>Loading…</td>
-                  </tr>
-                ) : resetItems.length ? (
-                  resetItems.map((it) => (
-                    <tr key={it.id}>
-                      <td>{it.id}</td>
-                      <td>{it.email}</td>
-                      <td>{new Date(it.requestedAt).toLocaleString()}</td>
-                      <td>
-                        <button
-                          className={styles.btnPrimary}
-                          onClick={() => openResetModal(it)}
-                        >
-                          Set Password
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4}>No password reset requests.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      {/* Password Reset Requests */}
+      <div className={styles.panelHalf}>
+        <h3 className={styles.panelTitle}>🔑 Password Reset Requests</h3>
 
-        <div className={styles.panelHalf}>
-          <h3 className={styles.panelTitle}>HR Requests</h3>
-          {hrMsg && <div className={styles.alert}>{hrMsg}</div>}
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>From</th>
-                  <th>Message</th>
-                  <th>Requested At</th>
-                </tr>
-              </thead>
-              <tbody>
-                {hrLoading ? (
-                  <tr>
-                    <td colSpan={4}>Loading…</td>
-                  </tr>
-                ) : hrItems.length ? (
-                  hrItems.map((it) => (
-                    <tr key={it.id}>
-                      <td>{it.id}</td>
-                      <td>{nameById(it.fromId)}</td>
-                      <td>{it.message}</td>
-                      <td>{new Date(it.requestedAt).toLocaleString()}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4}>No HR requests yet.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+        {resetMsg && (
+          <div
+            className={`${styles.alert} ${
+              resetMsg.startsWith("✅")
+                ? styles.alertSuccess
+                : styles.alertError
+            }`}
+          >
+            {resetMsg}
           </div>
+        )}
+
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Requested</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {resetLoading ? (
+                <tr>
+                  <td colSpan={4}>⏳ Loading reset requests…</td>
+                </tr>
+              ) : resetItems.length ? (
+                resetItems.map((it) => (
+                  <tr key={it.id}>
+                    <td>{it.id}</td>
+                    <td>
+                      <code>{it.email}</code>
+                    </td>
+                    <td>
+                      {new Date(it.requestedAt).toLocaleString(undefined, {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </td>
+                    <td>
+                      <button
+                        className={styles.btnPrimary}
+                        onClick={() => openResetModal(it)}
+                        title={`Set a new password for ${it.email}`}
+                      >
+                        🔧 Set Password
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4}>✅ No pending password reset requests</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      </section>
+      </div>
 
       {/* New Account Modal */}
       {newAccount && (
