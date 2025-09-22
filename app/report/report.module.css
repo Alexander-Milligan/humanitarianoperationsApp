@@ -1,0 +1,89 @@
+/* ===== Report Page Styles ===== */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0d6efd, #6c63ff);
+  font-family: system-ui, sans-serif;
+  color: #fff;
+}
+
+/* ===== Header ===== */
+.header {
+  text-align: center;
+  max-width: 900px;
+  margin-bottom: 2rem;
+}
+.header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.header p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+/* ===== Card Containers ===== */
+.card {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  width: 100%;
+  max-width: 900px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  color: #fff;
+}
+
+/* ===== Headings ===== */
+.card h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+.card h3 {
+  font-size: 1.2rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ===== Lists ===== */
+.card ul {
+  padding-left: 1.2rem;
+  margin: 0.5rem 0;
+}
+.card li {
+  margin-bottom: 0.5rem;
+}
+
+/* ===== Links ===== */
+.card a {
+  color: #00e0c3;
+  text-decoration: none;
+  font-weight: 500;
+}
+.card a:hover {
+  text-decoration: underline;
+}
+
+/* ===== Footer ===== */
+.footer {
+  margin-top: 2rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.75);
+  text-align: center;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .header h1 {
+    font-size: 2rem;
+  }
+  .card {
+    padding: 1.5rem;
+  }
+}

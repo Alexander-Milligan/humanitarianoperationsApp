@@ -1,3 +1,5 @@
+import styles from "./report.module.css";
+
 export const metadata = {
   title: "System Report – HR Management System",
   description:
@@ -6,30 +8,19 @@ export const metadata = {
 
 export default function ReportPage() {
   return (
-    <main style={{ padding: "40px 20px", maxWidth: 1100, margin: "0 auto" }}>
-      <header style={{ marginBottom: 28 }}>
-        <h1 style={{ margin: 0, fontSize: 40, lineHeight: 1.2 }}>
-          HR Management System — Technical Report
-        </h1>
-        <p style={{ marginTop: 10, color: "#555", fontSize: 16 }}>
+    <main className={styles.page}>
+      <header className={styles.header}>
+        <h1>HR Management System — Technical Report</h1>
+        <p>
           A concise overview of the application’s functionality, architecture,
           data design, security, deployment, and a practical roadmap for next
           steps.
         </p>
       </header>
 
-      <nav
-        aria-label="Table of contents"
-        style={{
-          border: "1px solid #e5e7eb",
-          borderRadius: 12,
-          padding: 18,
-          marginBottom: 28,
-          background: "#fafafa",
-        }}
-      >
+      <nav aria-label="Table of contents" className={styles.card}>
         <strong>Contents</strong>
-        <ol style={{ marginTop: 10, paddingLeft: 18 }}>
+        <ol>
           <li>
             <a href="#overview">Executive Overview</a>
           </li>
@@ -66,7 +57,7 @@ export default function ReportPage() {
         </ol>
       </nav>
 
-      <section id="overview" style={{ marginBottom: 40 }}>
+      <section id="overview" className={styles.card}>
         <h2>Executive Overview</h2>
         <p>
           This HR Management System delivers a complete workflow for
@@ -85,7 +76,7 @@ export default function ReportPage() {
         </p>
       </section>
 
-      <section id="features" style={{ marginBottom: 40 }}>
+      <section id="features" className={styles.card}>
         <h2>Delivered Features</h2>
         <ul>
           <li>
@@ -120,7 +111,7 @@ export default function ReportPage() {
         </ul>
       </section>
 
-      <section id="architecture" style={{ marginBottom: 40 }}>
+      <section id="architecture" className={styles.card}>
         <h2>Architecture & Technology Choices</h2>
         <ul>
           <li>
@@ -153,7 +144,7 @@ export default function ReportPage() {
         </p>
       </section>
 
-      <section id="data" style={{ marginBottom: 40 }}>
+      <section id="data" className={styles.card}>
         <h2>Data Model</h2>
         <p>
           Core relationships are designed to keep people and accounts aligned
@@ -188,7 +179,7 @@ export default function ReportPage() {
         </p>
       </section>
 
-      <section id="security" style={{ marginBottom: 40 }}>
+      <section id="security" className={styles.card}>
         <h2>Security & Access Control</h2>
         <ul>
           <li>Passwords are hashed with bcrypt before storage.</li>
@@ -209,7 +200,7 @@ export default function ReportPage() {
         </ul>
       </section>
 
-      <section id="ux" style={{ marginBottom: 40 }}>
+      <section id="ux" className={styles.card}>
         <h2>UX Notes & Accessibility</h2>
         <ul>
           <li>
@@ -228,7 +219,7 @@ export default function ReportPage() {
         </ul>
       </section>
 
-      <section id="deployment" style={{ marginBottom: 40 }}>
+      <section id="deployment" className={styles.card}>
         <h2>Deployment & Environments</h2>
         <ul>
           <li>
@@ -247,7 +238,7 @@ export default function ReportPage() {
         </ul>
       </section>
 
-      <section id="testing" style={{ marginBottom: 40 }}>
+      <section id="testing" className={styles.card}>
         <h2>Testing Approach</h2>
         <ul>
           <li>Focused route-level testing of API endpoints.</li>
@@ -261,7 +252,7 @@ export default function ReportPage() {
         </ul>
       </section>
 
-      <section id="limits" style={{ marginBottom: 40 }}>
+      <section id="limits" className={styles.card}>
         <h2>Known Limitations</h2>
         <ul>
           <li>JWT rotation/refresh can be expanded for long-lived sessions.</li>
@@ -280,10 +271,10 @@ export default function ReportPage() {
         </ul>
       </section>
 
-      <section id="roadmap" style={{ marginBottom: 40 }}>
+      <section id="roadmap" className={styles.card}>
         <h2>Future Improvements & Roadmap</h2>
 
-        <h3 style={{ marginTop: 12 }}>Short Term</h3>
+        <h3>Short Term</h3>
         <ul>
           <li>
             Introduce signed URL uploads to S3 for avatars and attachments.
@@ -298,7 +289,7 @@ export default function ReportPage() {
           </li>
         </ul>
 
-        <h3 style={{ marginTop: 12 }}>Medium Term</h3>
+        <h3>Medium Term</h3>
         <ul>
           <li>Role management UI (promote/demote users, assign HR roles).</li>
           <li>
@@ -315,7 +306,7 @@ export default function ReportPage() {
           </li>
         </ul>
 
-        <h3 style={{ marginTop: 12 }}>Long Term</h3>
+        <h3>Long Term</h3>
         <ul>
           <li>Performance reviews and objectives tracking.</li>
           <li>Time-off policy configuration and accruals.</li>
@@ -324,7 +315,7 @@ export default function ReportPage() {
         </ul>
       </section>
 
-      <section id="conclusion" style={{ marginBottom: 16 }}>
+      <section id="conclusion" className={styles.card}>
         <h2>Conclusion</h2>
         <p>
           This system meets the assessment requirements and goes further with a
@@ -335,11 +326,9 @@ export default function ReportPage() {
         </p>
       </section>
 
-      <hr style={{ margin: "32px 0" }} />
+      <hr />
 
-      <p style={{ fontSize: 14, color: "#666" }}>
-        HR Management System — Report Page
-      </p>
+      <p className={styles.footer}>HR Management System — Report Page</p>
     </main>
   );
 }
