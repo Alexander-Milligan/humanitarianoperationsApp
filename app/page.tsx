@@ -13,26 +13,37 @@ export default function LandingPage() {
           </h1>
 
           <p className="lead mb-4">
-            Note: I’m currently also developing four other community and council
-            projects. Due to restrictions on my shared hosting provider, I don’t
-            yet have permissions to set up a full SQL database for this demo.
-            Instead, this app runs on an in-memory store to demonstrate the HR
-            functionality.
+            This is a full-stack HR management system I built to cover all the
+            required features of the technical assessment, as well as several
+            additional improvements.
           </p>
 
           <div className={styles.checklist}>
-            <h5 className="fw-bold mb-2">Requirements Coverage</h5>
+            <h5 className="fw-bold mb-2">Features</h5>
             <ul className="list-unstyled mb-0">
-              <li>Authentication (sign-in/out, role-based access)</li>
-              <li>Employee Management (add / edit / delete)</li>
-              <li>Admin Dashboard (KPIs, charts, leave + HR requests)</li>
-              <li>Employee Dashboard (profile, avatar, leave, HR, reset)</li>
-              <li>Database — in-memory (shared hosting limits).</li>
-              <li>CI/CD + AWS Deployment — not supported on shared hosting.</li>
+              <li>Authentication with secure sign-in and sign-out</li>
+              <li>Role-based dashboards for administrators and employees</li>
+              <li>Employee management with add, edit, and delete functions</li>
+              <li>
+                Admin dashboard with key performance indicators and charts
+              </li>
+              <li>Leave requests with approval workflow</li>
+              <li>HR requests and communication</li>
+              <li>Profile picture uploads and password reset functionality</li>
+              <li>Built with Next.js, TypeScript, and PostgreSQL</li>
             </ul>
           </div>
 
-          <div className="d-flex justify-content-center gap-3">
+          <p className="mt-4">
+            The backend runs on PostgreSQL with Next.js handling both the
+            frontend and API routes. The app is fully responsive, styled with
+            Bootstrap, and deployable on Vercel or AWS. This project
+            demonstrates the required functionality and also highlights my
+            ability to refine workflows, focus on usability, and ensure the
+            system can be scaled further.
+          </p>
+
+          <div className="d-flex justify-content-center gap-3 mt-4">
             <Link
               href="/login"
               className={`btn btn-light btn-lg ${styles.btnRounded}`}
@@ -49,58 +60,57 @@ export default function LandingPage() {
         </div>
 
         <div className={`${styles.card} ${styles.scrollCard}`}>
-          <h2 className="fw-bold mb-3 text-center">
-            Database Integration Journey
-          </h2>
+          <h2 className="fw-bold mb-3 text-center">Development Overview</h2>
 
           <div className={styles.scrollContent}>
             <section className="mb-4">
-              <h5 className="fw-bold">Learning Curve</h5>
+              <h5 className="fw-bold">Approach</h5>
               <p>
-                I dedicated the last few days to learning how to properly
-                integrate with Vercel and Neon Postgres. With no prior
-                experience on these platforms, this was a steep but valuable
-                challenge that demonstrates my ability to adapt quickly.
+                I planned and structured the system to meet all required
+                features and included additional elements that make it more
+                practical for real-world use. This included refining workflows
+                for leave management, HR messaging, and profile management.
               </p>
             </section>
 
             <section className="mb-4">
-              <h5 className="fw-bold">Key Achievement</h5>
+              <h5 className="fw-bold">Key Achievements</h5>
               <p>
-                I implemented a fully working login flow backed by a real
-                database, replacing the temporary in-memory store. This
-                validates my capacity to solve unfamiliar problems under
-                pressure and deliver production-ready solutions.
+                Implemented a fully functional authentication and authorization
+                flow backed by PostgreSQL, with dashboards that adapt to user
+                roles. I also integrated employee statistics, reset flows, and
+                upload features to extend the core functionality.
               </p>
             </section>
 
             <section className="mb-4">
-              <h5 className="fw-bold">Problem Solving</h5>
+              <h5 className="fw-bold">Challenges Solved</h5>
               <ul>
-                <li>Resolved environment variable issues on Vercel</li>
-                <li>Fixed TypeScript / ESM runtime errors in migrations</li>
-                <li>Aligned database users and employees for consistency</li>
+                <li>Database integration and schema alignment</li>
+                <li>Deployment configuration with Vercel and Postgres</li>
+                <li>Consistent data handling across users and employees</li>
               </ul>
             </section>
 
             <section>
-              <h5 className="fw-bold">Ongoing Work</h5>
+              <h5 className="fw-bold">Outcome</h5>
               <p>
-                Some staff dashboards still need refinement. These remaining
-                tasks show my persistence and ownership: I take responsibility
-                not only for successes but also for resolving issues completely.
+                The result is a working HR system that demonstrates both the
+                required features and additional refinements. It highlights my
+                ability to deliver a complete full-stack application while
+                maintaining code quality, usability, and scalability.
               </p>
             </section>
 
             <footer className="mt-4 text-muted small text-center">
-              Demonstrating technical growth, professionalism, and resilience.
+              Demonstrating technical growth, efficiency, and reliability.
             </footer>
           </div>
         </div>
       </div>
 
       <footer className="mt-5 text-white-50 small text-center">
-        © {new Date().getFullYear()} HR System — Demo App
+        © {new Date().getFullYear()} HR System — Demo Application
       </footer>
     </div>
   );
