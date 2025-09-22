@@ -192,7 +192,7 @@ export default function Page() {
       const r = await fetch("/api/leave");
       const d = await r.json();
       const mine: LeaveReq[] = (d.items || []).filter(
-        (it: LeaveReq) => it.employeeId === employee.id
+        (it: LeaveReq) => it.employeeId === employee.user_id
       );
       setMyLeaves(mine);
     } catch {
@@ -243,7 +243,7 @@ export default function Page() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: employee.id,
+          id: employee.user_id,
           name: form.name,
           email: form.email,
           avatar: form.avatar,
@@ -267,7 +267,7 @@ export default function Page() {
     setUploading(true);
     const fd = new FormData();
     fd.append("file", file);
-    fd.append("userId", String(employee.id));
+    fd.append("userId", String(employee.user_id));
 
     try {
       const res = await fetch("/api/upload", { method: "POST", body: fd });
@@ -296,7 +296,7 @@ export default function Page() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          employeeId: employee.id,
+          employeeId: employee.user_id,
           start: leaveForm.start,
           end: leaveForm.end,
           reason: leaveForm.reason,
@@ -344,7 +344,10 @@ export default function Page() {
       const res = await fetch("/api/hr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fromId: employee.id, message: contactHrText }),
+        body: JSON.stringify({
+          fromId: employee.user_id,
+          message: contactHrText,
+        }),
       });
       const data = await res.json();
       if (data.ok) {
