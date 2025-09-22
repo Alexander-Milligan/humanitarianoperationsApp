@@ -46,10 +46,10 @@ type HrReq = {
   message: string;
   status: string;
   requested_at: string;
-  first_name?: string;
-  last_name?: string;
-  username?: string;
-  email?: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  username?: string | null;
+  email: string;
 };
 
 type PasswordReset = {
@@ -576,9 +576,10 @@ export default function Page() {
                     <tr key={it.id}>
                       <td>{it.id}</td>
                       <td>
-                        {it.first_name && it.last_name
-                          ? `${it.first_name} ${it.last_name}`
-                          : it.username || it.email || `#${it.user_id}`}
+                        {new Date(it.requested_at).toLocaleString(undefined, {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
                       </td>
                       <td>{it.message}</td>
                       <td>
