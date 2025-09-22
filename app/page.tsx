@@ -6,26 +6,7 @@ import styles from "./landing.module.css";
 export default function LandingPage() {
   return (
     <div className={styles.page}>
-      <div className="d-flex justify-content-center gap-3 mt-4">
-        <Link
-          href="/login"
-          className={`btn btn-light btn-lg ${styles.btnRounded}`}
-        >
-          Login
-        </Link>
-        <Link
-          href="/register"
-          className={`btn btn-outline-light btn-lg ${styles.btnRounded}`}
-        >
-          Register
-        </Link>
-        <Link
-          href="/report"
-          className={`btn btn-secondary btn-lg ${styles.btnRounded}`}
-        >
-          Read the Report
-        </Link>
-      </div>
+      <div className="d-flex justify-content-center gap-3 mt-4"></div>
 
       <div className="d-flex flex-wrap justify-content-center gap-4">
         <div className={styles.card}>
@@ -77,6 +58,14 @@ export default function LandingPage() {
             >
               Register
             </Link>
+            <div className="d-flex justify-content-center gap-3 mt-4">
+              <Link
+                href="/report"
+                className={`btn btn-secondary btn-lg ${styles.btnRounded}`}
+              >
+                Read the Report
+              </Link>
+            </div>
           </div>
         </div>
 
