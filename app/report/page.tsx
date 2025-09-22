@@ -315,6 +315,52 @@ export default function ReportPage() {
         </ul>
       </section>
 
+      <section id="talking-points">
+        <h3>🧠 What was required to be Learned</h3>
+        <ul>
+          <li>
+            Never used Vercel before → learned deployment, env vars, Postgres
+            hosting.
+          </li>
+          <li>
+            Solved schema linking issues between <code>users</code> and{" "}
+            <code>employees</code>.
+          </li>
+          <li>Implemented JWT authentication for secure login and roles.</li>
+        </ul>
+
+        <h3>⚙️ Why I Made These Choices</h3>
+        <ul>
+          <li>
+            <strong>Next.js App Router</strong> — modern, scalable, full-stack
+            in one.
+          </li>
+          <li>
+            <strong>PostgreSQL</strong> — reliable relational DB, Neon hosting.
+          </li>
+          <li>
+            <strong>Bootstrap 5 + CSS Modules</strong> — responsive styling +
+            branding.
+          </li>
+          <li>
+            <strong>Recharts</strong> — clear KPI and trend visualization.
+          </li>
+        </ul>
+
+        <h3>🚀 How I Would Improve</h3>
+        <ul>
+          <li>
+            Switch avatar uploads → <strong>S3 signed URLs</strong>.
+          </li>
+          <li>
+            Add <strong>notifications</strong> (email + in-app) for HR events.
+          </li>
+          <li>
+            Expand <strong>role/permissions</strong> with an Admin UI.
+          </li>
+        </ul>
+      </section>
+
       <section id="conclusion" className={styles.card}>
         <h2>Conclusion</h2>
         <p>
