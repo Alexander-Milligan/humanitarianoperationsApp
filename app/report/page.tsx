@@ -1,5 +1,3 @@
-/* app/report/page.tsx */
-
 export const metadata = {
   title: "System Report – HR Management System",
   description:

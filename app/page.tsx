@@ -48,24 +48,17 @@ export default function LandingPage() {
           <div className="d-flex justify-content-center gap-3 mt-4">
             <Link
               href="/login"
-              className={`btn btn-light btn-lg ${styles.btnRounded}`}
+              className={`btn btn-secondary btn-lg ${styles.btnRounded}`}
             >
               Login
             </Link>
+
             <Link
-              href="/register"
-              className={`btn btn-outline-light btn-lg ${styles.btnRounded}`}
+              href="/report"
+              className={`btn btn-secondary btn-lg ${styles.btnRounded}`}
             >
-              Register
+              Read the Report
             </Link>
-            <div className="d-flex justify-content-center gap-3 mt-4">
-              <Link
-                href="/report"
-                className={`btn btn-secondary btn-lg ${styles.btnRounded}`}
-              >
-                Read the Report
-              </Link>
-            </div>
           </div>
         </div>
 

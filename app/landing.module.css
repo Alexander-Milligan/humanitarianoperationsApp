@@ -6,36 +6,79 @@
   justify-content: center;
   align-items: center;
   text-align: center;
+  padding: 2rem;
 }
 
+/* Glassmorphism card */
 .card {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 1rem;
   max-width: 720px;
   width: 90%;
   color: white;
   padding: 2.5rem;
   box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.4);
+}
+
+/* Checklist with accent border */
 .checklist {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.35);
   padding: 1rem;
   border-radius: 0.75rem;
   font-size: 0.95rem;
   line-height: 1.6;
   text-align: left;
   margin-bottom: 1.5rem;
+  border-left: 4px solid #ffc107;
 }
 
+/* Buttons */
 .btnRounded {
   border-radius: 50px;
   font-weight: 600;
   padding: 0.75rem 1.5rem;
   transition: all 0.3s ease;
+  background: linear-gradient(135deg, #20c997, #0d6efd);
+  color: #fff !important;
+  border: none;
+  text-decoration: none;
+  display: inline-block;
 }
 
-/* Responsive */
+.btnRounded:hover {
+  background: linear-gradient(135deg, #0d6efd, #20c997);
+  transform: scale(1.05);
+}
+
+/* Scroll card for reports */
+.scrollCard {
+  max-height: 500px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #20c997 rgba(255, 255, 255, 0.1);
+}
+
+.scrollCard::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollCard::-webkit-scrollbar-thumb {
+  background: #20c997;
+  border-radius: 4px;
+}
+
+.scrollCard::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive tweaks */
 @media (max-width: 600px) {
   .card {
     padding: 1.5rem;
