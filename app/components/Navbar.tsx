@@ -22,24 +22,26 @@ export default function Navbar({ role }: NavbarProps) {
         <ul className={styles.navLinks}>
           {role === "admin" ? (
             <>
-              <li onClick={() => router.push("/dashboard/admin")}>Dashboard</li>
-              <li onClick={() => router.push("/dashboard/admin#employees")}>
-                Employees
+              <li>
+                <a href="/dashboard/admin">Dashboard</a>
               </li>
-              <li onClick={() => router.push("/dashboard/admin#reports")}>
-                Reports
+              <li>
+                <a href="/dashboard/admin#employees">Employees</a>
+              </li>
+              <li>
+                <a href="/dashboard/admin#reports">Reports</a>
               </li>
             </>
           ) : (
             <>
-              <li onClick={() => router.push("/dashboard/employee")}>
-                My Dashboard
+              <li>
+                <a href="/dashboard/employee">My Dashboard</a>
               </li>
-              <li onClick={() => router.push("/dashboard/employee#profile")}>
-                My Profile
+              <li>
+                <a href="/dashboard/employee#profile">My Profile</a>
               </li>
-              <li onClick={() => router.push("/dashboard/employee#department")}>
-                My Department
+              <li>
+                <a href="/dashboard/employee#department">My Department</a>
               </li>
             </>
           )}

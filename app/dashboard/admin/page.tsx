@@ -169,12 +169,15 @@ export default function Page() {
       const r = await fetch("/api/hr");
       const d = await r.json();
       setHrItems(d.items || []);
+      setHrMsg("✅ HR requests loaded.");
     } catch {
       setHrItems([]);
+      setHrMsg("❌ Failed to load HR requests.");
     } finally {
       setHrLoading(false);
     }
   }
+
   useEffect(() => {
     loadHr();
   }, []);

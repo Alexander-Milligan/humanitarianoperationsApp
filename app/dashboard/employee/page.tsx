@@ -345,7 +345,7 @@ export default function Page() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fromId: employee.user_id,
+          fromId: employee.user_id, // ✅ use user_id, not employee.id
           message: contactHrText,
         }),
       });
