@@ -25,23 +25,11 @@ export default function Navbar({ role }: NavbarProps) {
               <li>
                 <a href="/dashboard/admin">Dashboard</a>
               </li>
-              <li>
-                <a href="/dashboard/admin#employees">Employees</a>
-              </li>
-              <li>
-                <a href="/dashboard/admin#reports">Reports</a>
-              </li>
             </>
           ) : (
             <>
               <li>
                 <a href="/dashboard/employee">My Dashboard</a>
-              </li>
-              <li>
-                <a href="/dashboard/employee#profile">My Profile</a>
-              </li>
-              <li>
-                <a href="/dashboard/employee#department">My Department</a>
               </li>
             </>
           )}

@@ -18,14 +18,10 @@ export async function GET() {
       FROM employees
       ORDER BY id ASC
     `;
-
     return NextResponse.json({ ok: true, employees: rows });
   } catch (err) {
     console.error("Employees GET error:", err);
-    return NextResponse.json(
-      { ok: false, error: "Failed to fetch employees" },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, error: "Failed to fetch employees" }, { status: 500 });
   }
 }
 
@@ -33,40 +29,31 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { firstName, lastName, email, username, password, department, position, salary } = body;
+    const { firstName, lastName, email, username, password, department, position, salary, avatarUrl } = body;
 
     if (!firstName || !lastName || !email || !username || !password) {
-      return NextResponse.json(
-        { ok: false, error: "Missing required fields" },
-        { status: 400 }
-      );
+      return NextResponse.json({ ok: false, error: "Missing required fields" }, { status: 400 });
     }
 
     const hashed = await bcrypt.hash(password, 10);
 
-    // Insert into users table
     const userResult = await query`
       INSERT INTO users (first_name, last_name, email, username, password_hash, role)
       VALUES (${firstName}, ${lastName}, ${email}, ${username}, ${hashed}, 'employee')
       RETURNING id
     `;
-
     const userId = userResult.rows[0].id;
 
-    // Insert into employees table
     const { rows } = await query`
       INSERT INTO employees (user_id, department, position, salary, avatar_url)
-      VALUES (${userId}, ${department}, ${position}, ${salary}, NULL)
+      VALUES (${userId}, ${department}, ${position}, ${salary}, ${avatarUrl || null})
       RETURNING id, user_id, position, department, salary, avatar_url
     `;
 
     return NextResponse.json({ ok: true, employee: rows[0] });
   } catch (err) {
     console.error("Employees POST error:", err);
-    return NextResponse.json(
-      { ok: false, error: "Failed to create employee" },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, error: "Failed to create employee" }, { status: 500 });
   }
 }
 
@@ -92,18 +79,12 @@ export async function PATCH(req: Request) {
     `;
 
     if (rows.length === 0) {
-      return NextResponse.json(
-        { ok: false, error: "Employee not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ ok: false, error: "Employee not found" }, { status: 404 });
     }
 
     return NextResponse.json({ ok: true, employee: rows[0] });
   } catch (err) {
     console.error("Employees PATCH error:", err);
-    return NextResponse.json(
-      { ok: false, error: "Failed to update employee" },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, error: "Failed to update employee" }, { status: 500 });
   }
 }
