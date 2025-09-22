@@ -6,6 +6,27 @@ import styles from "./landing.module.css";
 export default function LandingPage() {
   return (
     <div className={styles.page}>
+      <div className="d-flex justify-content-center gap-3 mt-4">
+        <Link
+          href="/login"
+          className={`btn btn-light btn-lg ${styles.btnRounded}`}
+        >
+          Login
+        </Link>
+        <Link
+          href="/register"
+          className={`btn btn-outline-light btn-lg ${styles.btnRounded}`}
+        >
+          Register
+        </Link>
+        <Link
+          href="/report"
+          className={`btn btn-secondary btn-lg ${styles.btnRounded}`}
+        >
+          Read the Report
+        </Link>
+      </div>
+
       <div className="d-flex flex-wrap justify-content-center gap-4">
         <div className={styles.card}>
           <h1 className="fw-bold display-5 mb-3">
@@ -89,6 +110,7 @@ export default function LandingPage() {
                 <li>Database integration and schema alignment</li>
                 <li>Deployment configuration with Vercel and Postgres</li>
                 <li>Consistent data handling across users and employees</li>
+                <li>Never used Vercel before, like it now.</li>
               </ul>
             </section>
 
@@ -96,14 +118,16 @@ export default function LandingPage() {
               <h5 className="fw-bold">Outcome</h5>
               <p>
                 The result is a working HR system that demonstrates both the
-                required features and additional refinements. It highlights my
-                ability to deliver a complete full-stack application while
-                maintaining code quality, usability, and scalability.
+                required features and additional extras I think a hr system
+                should have. I hope It highlights my ability to deliver a
+                complete full-stack application with documentationand
+                intellectual property coverage too.
               </p>
             </section>
 
             <footer className="mt-4 text-muted small text-center">
-              Demonstrating technical growth, efficiency, and reliability.
+              Demonstrating technical growth, efficiency, and reliability with
+              room for additionly opertunities.
             </footer>
           </div>
         </div>
