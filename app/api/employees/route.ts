@@ -78,22 +78,65 @@ export async function POST(req: Request) {
   }
 }
 
-/** ---------- PUT: update employee ---------- */
+/** ---------- PUT:-------- */
 export async function PUT(req: Request) {
   try {
-    const body = await req.json();
+    let id: string | null = null;
+    let department: string | null = null;
+    let position: string | null = null;
+    let salary: string | null = null;
+    let avatarUrl: string | null = null;
+
+    // Detect 
+    const contentType = req.headers.get("content-type") || "";
+    if (contentType.includes("multipart/form-data")) {
+      const form = await req.formData();
+      id = form.get("id") as string;
+      department = (form.get("department") as string) || null;
+      position = (form.get("position") as string) || null;
+      salary = (form.get("salary") as string) || null;
+
+      const file = form.get("avatar") as File | null;
+      if (file && file.size > 0) {
+        //  Local file saving on Vercel issue
+        const bytes = Buffer.from(await file.arrayBuffer());
+        const filename = `${Date.now()}-${file.name}`;
+        const filepath = `public/uploads/${filename}`;
+        const fs = await import("fs");
+        const path = await import("path");
+        const fullPath = path.join(process.cwd(), filepath);
+        fs.writeFileSync(fullPath, bytes);
+
+        avatarUrl = `/uploads/${filename}`;
+      }
+    } else {
+      // JSON fallback
+      const body = await req.json();
+      id = body.id;
+      department = body.department ?? null;
+      position = body.position ?? null;
+      salary = body.salary ?? null;
+      avatarUrl = body.avatar_url ?? null;
+    }
+
+    if (!id) {
+      return NextResponse.json({ ok: false, error: "Missing employee ID" }, { status: 400 });
+    }
+
     const empUpdate = await sql`
       UPDATE employees
-      SET department = COALESCE(${body.department}, department),
-          position   = COALESCE(${body.position}, position),
-          salary     = COALESCE(${body.salary}, salary),
-          avatar_url = COALESCE(${body.avatar_url}, avatar_url)
-      WHERE id = ${body.id}
+      SET department = COALESCE(${department}, department),
+          position   = COALESCE(${position}, position),
+          salary     = COALESCE(${salary}, salary),
+          avatar_url = COALESCE(${avatarUrl}, avatar_url)
+      WHERE id = ${id}
       RETURNING id, user_id, department, position, salary, avatar_url
     `;
+
     if (!empUpdate.rows.length) {
       return NextResponse.json({ ok: false, error: "Employee not found" }, { status: 404 });
     }
+
     return NextResponse.json({ ok: true, employee: empUpdate.rows[0] });
   } catch (err) {
     console.error("Employees PUT error:", err);
@@ -101,7 +144,8 @@ export async function PUT(req: Request) {
   }
 }
 
-/** ---------- DELETE: remove employee + linked user ---------- */
+
+/** ---------- DELETE ---------- */
 export async function DELETE(req: Request) {
   try {
     const { id } = await req.json();
