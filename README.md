@@ -1,12 +1,13 @@
 # Basic Internal HR System
 
-![License: Proprietary](https://img.shields.io/badge/license-proprietary-red.svg)
-![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
-![Bootstrap](https://img.shields.io/badge/Bootstrap-5-7952B3?logo=bootstrap)
-![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js)
-![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)
+[![License: Proprietary](https://img.shields.io/badge/license-proprietary-red.svg)](./LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://react.dev/)
+[![Bootstrap](https://img.shields.io/badge/Bootstrap-5-7952B3?logo=bootstrap)](https://getbootstrap.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js)](https://nodejs.org/)
+[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)](https://vercel.com/)
+
 
 A full-stack HR management system built with Next.js, TypeScript, and Node.js API routes.  
 This project demonstrates role-based authentication, employee management, HR request handling, and live deployment on **Vercel**.  
