@@ -88,7 +88,7 @@ hr-system/
 Built with ❤️ by **Alexander Milligan**  
 🌐 [saltirewebsites.com](https://saltirewebsites.com)  
 
-🚀 [Live Vercel Demo](https://humanitarianoperations-ba33bl8lj-alexander-milligans-projects.vercel.app/)
+🚀 [Live Vercel Demo](https://humanitarianoperations-ba33bl8lj-alexander-milligans-projects.vercel.app/](https://humanitarianoperations-app.vercel.app/))
 
 
 ## ⚖️ Copyright & License
