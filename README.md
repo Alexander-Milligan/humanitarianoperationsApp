@@ -1,4 +1,12 @@
-Basic Internal HR System
+# Basic Internal HR System
+
+![License: Proprietary](https://img.shields.io/badge/license-proprietary-red.svg)
+![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
+![Bootstrap](https://img.shields.io/badge/Bootstrap-5-7952B3?logo=bootstrap)
+![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js)
+![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel)
 
 A full-stack HR management system built with Next.js, TypeScript, and Node.js API routes.  
 This project demonstrates role-based authentication, employee management, HR request handling, and live deployment on **Vercel**.  
@@ -82,3 +90,12 @@ Built with ❤️ by **Alexander Milligan**
 
 🚀 [Live Vercel Demo](https://humanitarianoperations-ba33bl8lj-alexander-milligans-projects.vercel.app/)
 
+
+## ⚖️ Copyright & License
+
+© 2025 **Alexander Milligan**. All rights reserved.  
+
+This project is provided **exclusively for technical assessment purposes**.  
+It may not be copied, modified, distributed, or used outside of the assessment without prior written consent.  
+
+🔗 See [LICENSE](./LICENSE) and [COPYRIGHT.md](./COPYRIGHT.md) for details.  
